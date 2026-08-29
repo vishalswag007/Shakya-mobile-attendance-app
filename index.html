@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#f8fafc">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>AttendEase • 3D Mobile Attendance</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/app.css">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="theme-indigo">
+
+  <!-- Ambient 3D Depth Lights -->
+  <div class="ambient-glow ambient-glow-1"></div>
+  <div class="ambient-glow ambient-glow-2"></div>
+
+  <!-- Desktop Testing Controls -->
+  <div class="desktop-controls">
+    <button id="toggle-frame-btn" class="desktop-btn active" title="Toggle device frame vs full screen">
+      <i data-lucide="smartphone" class="w-4 h-4"></i> 3D Mobile Frame
+    </button>
+    <button id="reset-data-btn" class="desktop-btn" title="Reset all data to defaults">
+      <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset Mock
+    </button>
+  </div>
+
+  <!-- Mobile App Device Shell -->
+  <div id="device-container" class="device-container">
+    
+    <!-- ================= ADMIN LOGIN LOCK SCREEN ================= -->
+    <div id="admin-lockscreen" class="admin-lockscreen">
+      <div class="admin-login-card">
+        
+        <div id="login-logo-container" class="brand-logo-frame mx-auto mb-3 w-16 h-16 rounded-2xl shadow-lg border-2 border-indigo-200">
+          <span id="login-logo-emoji" class="text-3xl">⚡</span>
+          <img id="login-logo-img" src="" alt="Organization Logo" class="hidden w-full h-full object-cover">
+        </div>
+        
+        <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">AttendEase 3D</h2>
+        <p class="text-xs text-slate-500 font-medium mb-4">Administrator Authentication</p>
+
+        <!-- Credentials Hint Pill -->
+        <div class="p-2.5 rounded-2xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800 text-left mb-4 flex items-start gap-2 shadow-sm">
+          <i data-lucide="key" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+          <div>
+            <span class="font-bold">Default Admin Login:</span><br>
+            User: <code class="font-mono font-bold text-slate-900 bg-white px-1 py-0.5 rounded border border-amber-300">admin</code> | 
+            Pass: <code class="font-mono font-bold text-slate-900 bg-white px-1 py-0.5 rounded border border-amber-300">admin123</code>
+          </div>
+        </div>
+
+        <form id="form-admin-login" class="space-y-3">
+          <div class="form-group text-left mb-2">
+            <label class="form-label" for="login-username">Admin Username</label>
+            <div class="relative">
+              <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+              <input type="text" id="login-username" required placeholder="admin" value="admin" class="form-input pl-10">
+            </div>
+          </div>
+
+          <div class="form-group text-left mb-3">
+            <label class="form-label" for="login-password">Password</label>
+            <div class="relative">
+              <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+              <input type="password" id="login-password" required placeholder="••••••••" value="admin123" class="form-input pl-10">
+            </div>
+          </div>
+
+          <p id="login-error-msg" class="text-xs font-bold text-rose-600 hidden"></p>
+
+          <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl text-sm shadow-md shadow-indigo-600/30 active:scale-98 transition flex items-center justify-center gap-2">
+            <i data-lucide="log-in" class="w-4 h-4"></i> Unlock App Dashboard
+          </button>
+        </form>
+
+        <p class="text-[10px] text-slate-400 mt-4 font-semibold">Clean 3D Multi-User Architecture v1.4</p>
+      </div>
+    </div>
+
+    <!-- Status Bar / Dynamic Island -->
+    <div class="status-bar">
+      <span id="live-clock" class="tracking-tight text-slate-800 font-bold">09:41</span>
+      <div class="dynamic-island">
+        <div class="camera-lens"></div>
+        <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+      </div>
+      <div class="flex items-center gap-1.5 text-xs text-slate-700">
+        <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+        <i data-lucide="battery-charging" class="w-4 h-4 text-emerald-600"></i>
+      </div>
+    </div>
+
+    <!-- Clean 3D App Header -->
+    <header class="app-header">
+      <div class="flex items-center gap-2.5">
+        <div id="header-brand-logo-frame" class="brand-logo-frame">
+          <span id="header-brand-emoji" class="text-xl">⚡</span>
+          <img id="header-brand-img" src="" alt="Logo" class="hidden w-full h-full object-cover">
+        </div>
+        <div>
+          <h1 id="header-org-title" class="text-xs font-extrabold leading-tight tracking-tight text-slate-900 flex items-center gap-1.5">
+            AttendEase Systems
+          </h1>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">ADMIN</span>
+            <p id="header-org-subtitle" class="text-[10px] text-slate-500 font-medium">HQ Campus</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <button id="btn-quick-today" class="p-2 rounded-2xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 transition active:scale-95 shadow-sm" title="Jump to Today">
+          <i data-lucide="calendar" class="w-4 h-4"></i>
+        </button>
+        <button id="btn-open-add-candidate" class="px-3 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm shadow-indigo-600/30 transition active:scale-95">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add
+        </button>
+        <button id="btn-header-logout" class="p-2 rounded-2xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 transition active:scale-95" title="Admin Logout">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="app-content">
+
+      <!-- ================= TAB 1: ATTENDANCE DASHBOARD ================= -->
+      <section id="tab-attendance" class="tab-pane active">
+        
+        <!-- Date Selector Header Card -->
+        <div class="flex items-center justify-between bg-white border border-slate-200 rounded-2xl p-2.5 mb-3.5 shadow-sm">
+          <button id="date-prev" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition active:scale-90 shadow-sm">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+          </button>
+          
+          <div class="flex items-center gap-2">
+            <input type="date" id="attendance-date-input" class="bg-transparent text-slate-800 font-bold text-sm tracking-wide focus:outline-none cursor-pointer text-center">
+            <span id="date-badge-today" class="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">TODAY</span>
+          </div>
+
+          <button id="date-next" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition active:scale-90 shadow-sm">
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- 3D Circular Attendance Gauge & Summary Widget -->
+        <div class="gauge-3d-card">
+          <div class="flex items-center gap-3.5">
+            <!-- 3D Circular SVG Progress Ring -->
+            <div class="relative w-16 h-16 flex items-center justify-center">
+              <svg class="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
+                <path class="text-slate-100" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path id="gauge-circle-stroke" class="text-emerald-500 transition-all duration-700 ease-out" stroke-dasharray="0, 100" stroke-width="3.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span id="gauge-percent-text" class="text-xs font-black text-slate-900">0%</span>
+                <span class="text-[8px] font-bold text-slate-400 uppercase">Rate</span>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-sm font-extrabold text-slate-900">Today's Attendance</h3>
+              <p id="gauge-status-subtext" class="text-xs text-slate-500 font-medium">0 of 0 candidates marked</p>
+            </div>
+          </div>
+
+          <button id="btn-mark-all-present" class="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 transition shadow-sm">
+            <i data-lucide="check-check" class="w-3.5 h-3.5 text-emerald-600"></i> Mark All
+          </button>
+        </div>
+
+        <!-- 3D Metric Stat Pills -->
+        <div class="stats-grid">
+          <div class="stat-pill border-indigo-100 bg-indigo-50/70">
+            <div id="stat-total" class="stat-value text-indigo-700">0</div>
+            <div class="stat-label text-indigo-900">Total</div>
+          </div>
+          <div class="stat-pill border-emerald-200 bg-emerald-50/70">
+            <div id="stat-present" class="stat-value text-emerald-600">0</div>
+            <div class="stat-label text-emerald-900">Present</div>
+          </div>
+          <div class="stat-pill border-rose-200 bg-rose-50/70">
+            <div id="stat-absent" class="stat-value text-rose-600">0</div>
+            <div class="stat-label text-rose-900">Absent</div>
+          </div>
+          <div class="stat-pill border-amber-200 bg-amber-50/70">
+            <div id="stat-leave" class="stat-value text-amber-600">0</div>
+            <div class="stat-label text-amber-900">Leave</div>
+          </div>
+        </div>
+
+        <!-- Search Bar & Dynamic Department Filter Chips -->
+        <div class="flex flex-col gap-2.5 mb-4">
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="attendance-search" placeholder="Search candidate by name, ID, role..." class="w-full bg-white border border-slate-200 rounded-2xl pl-10 pr-3 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-sm">
+          </div>
+
+          <!-- Dynamic Department Chips -->
+          <div id="dept-filter-chips" class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- 3D Attendance Candidate Cards -->
+        <div id="attendance-list" class="space-y-3">
+          <!-- Populated dynamically with photos and 3D buttons -->
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 2: CANDIDATE DIRECTORY ================= -->
+      <section id="tab-candidates" class="tab-pane hidden">
+        
+        <div class="flex items-center justify-between mb-3.5">
+          <div>
+            <h2 class="text-base font-extrabold text-slate-900">Candidate Directory</h2>
+            <p class="text-xs text-slate-500"><span id="candidate-count-badge" class="font-bold text-slate-800">0</span> candidates enrolled</p>
+          </div>
+          <button id="btn-new-candidate-action" class="px-3 py-1.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-indigo-600/30">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Register
+          </button>
+        </div>
+
+        <div class="relative mb-3.5">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+          <input type="text" id="candidate-directory-search" placeholder="Search by name, ID, role, department..." class="w-full bg-white border border-slate-200 rounded-2xl pl-10 pr-3 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-sm">
+        </div>
+
+        <div id="candidates-directory-list" class="space-y-2.5">
+          <!-- Dynamically populated -->
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 3: DATE-WISE HISTORY & EXPORT ================= -->
+      <section id="tab-history" class="tab-pane hidden">
+        
+        <div class="mb-3.5">
+          <h2 class="text-base font-extrabold text-slate-900">Date-wise History</h2>
+          <p class="text-xs text-slate-500">Track past logs and generate attendance reports</p>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-3.5 mb-3.5 shadow-sm">
+          <label class="form-label text-indigo-700 mb-1.5 flex items-center justify-between">
+            <span>Select Target Date</span>
+            <span class="text-[10px] text-slate-400 font-normal">Past logs available</span>
+          </label>
+          <input type="date" id="history-date-picker" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm text-slate-800 font-bold focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div id="history-summary-box" class="bg-gradient-to-br from-indigo-50/80 to-slate-50 border border-indigo-100 rounded-2xl p-4 mb-3.5 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <span id="history-summary-date" class="text-xs font-bold text-indigo-900">August 29, 2026</span>
+            <span id="history-summary-rate" class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">85% Attendance</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+              <span id="hist-present" class="block text-emerald-600 font-extrabold text-sm">0</span>
+              <span class="text-[10px] text-slate-500 uppercase font-bold">Present</span>
+            </div>
+            <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+              <span id="hist-absent" class="block text-rose-600 font-extrabold text-sm">0</span>
+              <span class="text-[10px] text-slate-500 uppercase font-bold">Absent</span>
+            </div>
+            <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+              <span id="hist-leave" class="block text-amber-600 font-extrabold text-sm">0</span>
+              <span class="text-[10px] text-slate-500 uppercase font-bold">Leave</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5 mb-3 overflow-x-auto pb-1 no-scrollbar">
+          <button class="hist-filter active text-[11px] px-3 py-1 rounded-full font-bold bg-indigo-600 text-white shadow-sm" data-status="all">All</button>
+          <button class="hist-filter text-[11px] px-3 py-1 rounded-full font-bold bg-white text-emerald-700 border border-emerald-200" data-status="present">Present</button>
+          <button class="hist-filter text-[11px] px-3 py-1 rounded-full font-bold bg-white text-rose-700 border border-rose-200" data-status="absent">Absent</button>
+          <button class="hist-filter text-[11px] px-3 py-1 rounded-full font-bold bg-white text-amber-700 border border-amber-200" data-status="leave">Leave</button>
+        </div>
+
+        <div id="history-records-list" class="space-y-2 mb-4">
+          <!-- Dynamically populated -->
+        </div>
+
+        <div class="border-t border-slate-200 pt-3.5 space-y-2.5">
+          <button id="btn-export-excel" class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 active:scale-98 transition">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Download Attendance Excel / CSV
+          </button>
+          <button id="btn-sync-sheets" class="w-full py-3.5 px-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 active:scale-98 transition shadow-sm">
+            <i data-lucide="cloud" class="w-4 h-4 text-sky-600"></i> Sync with Google Sheets
+          </button>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 4: ONLINE DEPLOYMENT & MULTI-USER CLOUD SYNC ================= -->
+      <section id="tab-deployment" class="tab-pane hidden">
+        
+        <div class="mb-3.5">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-extrabold text-slate-900">Multi-Device Deployment</h2>
+            <span class="px-2 py-0.5 bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-full text-[10px] font-bold">Cloud Sync</span>
+          </div>
+          <p class="text-xs text-slate-500">Deploy online so anyone sees the exact same data</p>
+        </div>
+
+        <!-- Live Multi-User Shared Room Card -->
+        <div class="bg-white border-2 border-indigo-200 rounded-2xl p-4 mb-3.5 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+              <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-800">
+                Shared Cloud Database Room
+              </h3>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold font-mono">LIVE SYNC</span>
+          </div>
+          
+          <p class="text-xs text-slate-600">
+            Share this <strong>Cloud Room ID</strong> with other admins. Any device with this ID accesses and updates the same candidates and attendance in real time!
+          </p>
+
+          <div class="flex gap-2">
+            <input type="text" id="input-cloud-room-id" value="GLOBAL-CAMPUS-2026" class="form-input text-xs font-mono font-bold">
+            <button id="btn-update-room-id" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs whitespace-nowrap shadow-sm">
+              Connect Room
+            </button>
+          </div>
+        </div>
+
+        <!-- Explainer -->
+        <div class="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-2xl p-4 text-white mb-3.5 shadow-md space-y-3">
+          <div class="flex items-center gap-2.5">
+            <span class="text-2xl">🌐</span>
+            <div>
+              <h3 class="text-sm font-bold text-white">How Anyone Accesses Same Data</h3>
+              <p class="text-[11px] text-indigo-200">Online hosting + shared database</p>
+            </div>
+          </div>
+
+          <div class="space-y-2 text-xs text-slate-200">
+            <div class="flex items-start gap-2 bg-white/10 p-2.5 rounded-xl">
+              <span class="font-bold text-emerald-400">1.</span>
+              <span><strong>Host Frontend Online:</strong> Upload this folder to <strong>Vercel, Netlify, or GitHub Pages</strong>. You get a public URL (e.g. <code>https://your-attendance.vercel.app</code>).</span>
+            </div>
+            <div class="flex items-start gap-2 bg-white/10 p-2.5 rounded-xl">
+              <span class="font-bold text-emerald-400">2.</span>
+              <span><strong>Share URL with Staff:</strong> Anyone on iPhone, Android, or PC opens that link in their browser.</span>
+            </div>
+            <div class="flex items-start gap-2 bg-white/10 p-2.5 rounded-xl">
+              <span class="font-bold text-emerald-400">3.</span>
+              <span><strong>Central Database:</strong> In Step 2 (PHP+MySQL) or Firebase, all data updates are centralized so everyone sees identical records.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PWA Mobile App Install Card -->
+        <div class="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-2xl p-4 text-white mb-3.5 shadow-md shadow-indigo-500/25">
+          <div class="flex items-center gap-3 mb-2.5">
+            <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl">
+              📲
+            </div>
+            <div>
+              <h3 class="text-sm font-bold">Install as Native Mobile App</h3>
+              <p class="text-[11px] text-indigo-100">Standalone PWA for iOS & Android</p>
+            </div>
+          </div>
+          <button id="btn-trigger-pwa-install" class="w-full py-2.5 bg-white hover:bg-slate-100 text-indigo-900 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition active:scale-95">
+            <i data-lucide="download" class="w-4 h-4 text-indigo-600"></i> Install Mobile App
+          </button>
+        </div>
+
+        <!-- Hosting Guides -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 mb-3.5 shadow-sm space-y-3">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+            <i data-lucide="globe" class="w-4 h-4 text-emerald-600"></i>
+            Online Hosting Guides
+          </h3>
+
+          <div class="space-y-2">
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <span class="text-lg">▲</span>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-800">Vercel / Netlify (Recommended)</h4>
+                  <p class="text-[10px] text-slate-500">Instant free link to share with everyone</p>
+                </div>
+              </div>
+              <button id="btn-deploy-vercel-guide" class="px-2.5 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-bold hover:border-slate-300">
+                Setup
+              </button>
+            </div>
+
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <span class="text-lg">🐘</span>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-800">cPanel / Shared PHP Hosting</h4>
+                  <p class="text-[10px] text-slate-500">Upload to public_html with MySQL DB</p>
+                </div>
+              </div>
+              <button id="btn-deploy-cpanel-guide" class="px-2.5 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-bold hover:border-slate-300">
+                Setup
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button id="btn-download-deploy-bundle" class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-md active:scale-98 transition">
+          <i data-lucide="package" class="w-4 h-4 text-emerald-400"></i> Download Deployment Instructions (.MD)
+        </button>
+
+      </section>
+
+      <!-- ================= TAB 5: CUSTOMIZE SETTINGS ================= -->
+      <section id="tab-settings" class="tab-pane hidden">
+        
+        <div class="mb-3.5">
+          <h2 class="text-base font-extrabold text-slate-900">Customization & Settings</h2>
+          <p class="text-xs text-slate-500">Personalize branding, 3D theme, logo & rules</p>
+        </div>
+
+        <!-- 1. Organization Official Logo Upload -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 mb-3.5 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+              <i data-lucide="image" class="w-4 h-4 text-indigo-600"></i>
+              Organization Logo Photo
+            </h3>
+            <span class="text-[10px] px-2 py-0.5 bg-indigo-50 text-indigo-700 font-bold rounded-full">BRANDING</span>
+          </div>
+
+          <div class="flex items-center gap-3.5">
+            <div id="settings-logo-preview-box" class="brand-logo-frame w-14 h-14 rounded-2xl border-2 border-indigo-200 shadow-md">
+              <span id="settings-logo-emoji" class="text-2xl">⚡</span>
+              <img id="settings-logo-img" src="" alt="Org Logo" class="hidden w-full h-full object-cover">
+            </div>
+
+            <div class="flex-1 space-y-1.5">
+              <label class="py-2 px-3 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition shadow-sm">
+                <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                <span>Upload Logo Photo</span>
+                <input type="file" id="input-org-logo-file" accept="image/*" class="hidden">
+              </label>
+              <button type="button" id="btn-remove-org-logo" class="text-[11px] text-rose-600 hover:underline hidden font-medium">
+                Reset to default icon
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Admin Security Settings -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 mb-3.5 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+              Admin Security & Credentials
+            </h3>
+            <span class="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded-full">ACTIVE</span>
+          </div>
+
+          <form id="form-update-admin-pass" class="space-y-2.5">
+            <div class="grid grid-cols-2 gap-2">
+              <div class="form-group mb-0">
+                <label class="form-label" for="admin-current-pass">Current Password</label>
+                <input type="password" id="admin-current-pass" required placeholder="admin123" class="form-input text-xs">
+              </div>
+              <div class="form-group mb-0">
+                <label class="form-label" for="admin-new-pass">New Password</label>
+                <input type="password" id="admin-new-pass" required placeholder="New password" class="form-input text-xs">
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 rounded-xl text-xs font-bold transition">
+              Update Admin Password
+            </button>
+          </form>
+        </div>
+
+        <!-- 3. Theme Color Swatches -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 mb-3.5 shadow-sm space-y-2.5">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+            <i data-lucide="palette" class="w-4 h-4 text-indigo-600"></i>
+            Theme Accent Color
+          </h3>
+          <div id="theme-swatches" class="flex items-center justify-between pt-1">
+            <button class="theme-swatch active w-9 h-9 rounded-2xl bg-indigo-600 border-2 border-slate-900 flex items-center justify-center text-white shadow-sm" data-theme="indigo">
+              <i data-lucide="check" class="w-4 h-4"></i>
+            </button>
+            <button class="theme-swatch w-9 h-9 rounded-2xl bg-blue-600 border-2 border-transparent flex items-center justify-center text-white shadow-sm" data-theme="blue">
+              <i data-lucide="check" class="w-4 h-4 opacity-0"></i>
+            </button>
+            <button class="theme-swatch w-9 h-9 rounded-2xl bg-emerald-600 border-2 border-transparent flex items-center justify-center text-white shadow-sm" data-theme="emerald">
+              <i data-lucide="check" class="w-4 h-4 opacity-0"></i>
+            </button>
+            <button class="theme-swatch w-9 h-9 rounded-2xl bg-orange-600 border-2 border-transparent flex items-center justify-center text-white shadow-sm" data-theme="orange">
+              <i data-lucide="check" class="w-4 h-4 opacity-0"></i>
+            </button>
+            <button class="theme-swatch w-9 h-9 rounded-2xl bg-purple-600 border-2 border-transparent flex items-center justify-center text-white shadow-sm" data-theme="purple">
+              <i data-lucide="check" class="w-4 h-4 opacity-0"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4. Organization Profile Branding -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 mb-3.5 shadow-sm space-y-3">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+            <i data-lucide="building-2" class="w-4 h-4 text-indigo-600"></i>
+            Organization Text Details
+          </h3>
+
+          <div class="form-group mb-2">
+            <label class="form-label" for="setting-org-name">Company / Institute Name</label>
+            <input type="text" id="setting-org-name" class="form-input">
+          </div>
+
+          <div class="form-group mb-1">
+            <label class="form-label" for="setting-org-branch">Branch / Department Tagline</label>
+            <input type="text" id="setting-org-branch" class="form-input">
+          </div>
+
+          <button id="btn-save-branding" class="w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl font-bold text-xs transition active:scale-95 shadow-sm">
+            Save Organization Details
+          </button>
+        </div>
+
+        <!-- 5. Custom Department Manager -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 mb-3.5 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+              <i data-lucide="layers" class="w-4 h-4 text-indigo-600"></i>
+              Manage Departments
+            </h3>
+            <button id="btn-open-add-dept" class="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add
+            </button>
+          </div>
+
+          <div id="settings-dept-tags" class="flex flex-wrap gap-1.5">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- 6. Backup & Data Management -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 mb-4 shadow-sm space-y-2.5">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+            <i data-lucide="database" class="w-4 h-4 text-indigo-600"></i>
+            Data Backup & Restore
+          </h3>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btn-export-backup" class="py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Backup
+            </button>
+            <label class="py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer">
+              <i data-lucide="upload" class="w-3.5 h-3.5"></i> Import Backup
+              <input type="file" id="input-import-backup" accept=".json" class="hidden">
+            </label>
+          </div>
+
+          <button id="btn-admin-logout-settings" class="w-full py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Logout Administrator
+          </button>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- ================= 3D FLOATING ACTION BUTTON ================= -->
+    <button id="fab-add-candidate" class="fab-btn" title="Add Candidate">
+      <i data-lucide="plus" class="w-6 h-6"></i>
+    </button>
+
+    <!-- ================= 3D BOTTOM NAVIGATION DOCK ================= -->
+    <nav class="bottom-dock">
+      <button class="dock-item active" data-tab="tab-attendance">
+        <i data-lucide="check-circle" class="w-5 h-5"></i>
+        <span>Attendance</span>
+      </button>
+      <button class="dock-item" data-tab="tab-candidates">
+        <i data-lucide="users" class="w-5 h-5"></i>
+        <span>Candidates</span>
+      </button>
+      <button class="dock-item" data-tab="tab-history">
+        <i data-lucide="calendar-days" class="w-5 h-5"></i>
+        <span>History</span>
+      </button>
+      <button class="dock-item" data-tab="tab-deployment">
+        <i data-lucide="cloud-upload" class="w-5 h-5"></i>
+        <span>Deploy</span>
+      </button>
+      <button class="dock-item" data-tab="tab-settings">
+        <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
+        <span>Settings</span>
+      </button>
+    </nav>
+
+    <!-- ================= MODAL: REGISTER CANDIDATE (WITH PHOTO UPLOAD) ================= -->
+    <div id="modal-add-candidate" class="modal-overlay">
+      <div class="modal-sheet">
+        <div class="sheet-handle"></div>
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900">Register Candidate</h3>
+            <p class="text-xs text-slate-500">Upload real photo or pick an avatar</p>
+          </div>
+          <button id="btn-close-candidate-modal" class="p-1.5 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <form id="form-add-candidate" class="space-y-3">
+          
+          <!-- Candidate Photo Upload Dropzone -->
+          <div class="form-group mb-2">
+            <label class="form-label">Candidate Photo</label>
+            <div class="flex items-center gap-3">
+              <div id="photo-preview-box" class="photo-preview-ring bg-slate-100 flex items-center justify-center shrink-0">
+                <span id="photo-preview-emoji" class="text-2xl">👤</span>
+                <img id="photo-preview-img" src="" alt="Candidate Photo" class="candidate-avatar-img hidden">
+              </div>
+
+              <div class="flex-1 space-y-1.5">
+                <label class="py-2 px-3 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition shadow-sm">
+                  <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+                  <span>Upload / Take Photo</span>
+                  <input type="file" id="candidate-photo-file" accept="image/*" class="hidden">
+                </label>
+                <button type="button" id="btn-remove-photo" class="text-[11px] text-rose-600 hover:underline hidden font-medium">
+                  Remove photo
+                </button>
+              </div>
+            </div>
+            <input type="hidden" id="candidate-photo-data" value="">
+          </div>
+
+          <!-- Fallback Avatar Emoji Picker -->
+          <div id="emoji-picker-row">
+            <label class="form-label">Or Pick Avatar Emoji</label>
+            <div id="avatar-selector" class="flex gap-2 overflow-x-auto pb-1">
+              <button type="button" class="avatar-option active w-9 h-9 rounded-2xl bg-indigo-50 border-2 border-indigo-600 text-lg flex items-center justify-center shadow-sm" data-emoji="👨‍💻">👨‍💻</button>
+              <button type="button" class="avatar-option w-9 h-9 rounded-2xl bg-slate-100 border border-slate-200 text-lg flex items-center justify-center" data-emoji="👩‍💻">👩‍💻</button>
+              <button type="button" class="avatar-option w-9 h-9 rounded-2xl bg-slate-100 border border-slate-200 text-lg flex items-center justify-center" data-emoji="👨‍💼">👨‍💼</button>
+              <button type="button" class="avatar-option w-9 h-9 rounded-2xl bg-slate-100 border border-slate-200 text-lg flex items-center justify-center" data-emoji="👩‍💼">👩‍💼</button>
+              <button type="button" class="avatar-option w-9 h-9 rounded-2xl bg-slate-100 border border-slate-200 text-lg flex items-center justify-center" data-emoji="🧑‍🔬">🧑‍🔬</button>
+              <button type="button" class="avatar-option w-9 h-9 rounded-2xl bg-slate-100 border border-slate-200 text-lg flex items-center justify-center" data-emoji="👩‍🎨">👩‍🎨</button>
+            </div>
+            <input type="hidden" id="candidate-avatar" value="👨‍💻">
+          </div>
+
+          <div class="form-group mb-2">
+            <label class="form-label" for="candidate-name">Full Name *</label>
+            <input type="text" id="candidate-name" required placeholder="e.g. Rahul Sharma" class="form-input">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="form-group mb-2">
+              <label class="form-label" for="candidate-id">Candidate ID</label>
+              <input type="text" id="candidate-id" placeholder="CAN-107" class="form-input">
+            </div>
+            <div class="form-group mb-2">
+              <label class="form-label" for="candidate-dept">Department</label>
+              <select id="candidate-dept" class="form-select">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group mb-2">
+            <label class="form-label" for="candidate-role">Designation / Role</label>
+            <input type="text" id="candidate-role" placeholder="e.g. Frontend Engineer" class="form-input">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="form-group mb-2">
+              <label class="form-label" for="candidate-phone">Phone</label>
+              <input type="tel" id="candidate-phone" placeholder="+91 98765 00000" class="form-input">
+            </div>
+            <div class="form-group mb-2">
+              <label class="form-label" for="candidate-email">Email</label>
+              <input type="email" id="candidate-email" placeholder="name@company.com" class="form-input">
+            </div>
+          </div>
+
+          <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl text-sm shadow-md shadow-indigo-600/30 active:scale-98 transition flex items-center justify-center gap-2 mt-2">
+            <i data-lucide="check" class="w-4 h-4"></i> Save Candidate Profile
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================= MODAL: CANDIDATE DETAIL PROFILE ================= -->
+    <div id="modal-candidate-detail" class="modal-overlay">
+      <div class="modal-sheet">
+        <div class="sheet-handle"></div>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-base font-extrabold text-slate-900">Candidate Profile</h3>
+          <button id="btn-close-detail-modal" class="p-1.5 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <div id="candidate-profile-content" class="space-y-4">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= MODAL: 3D DIGITAL ID BADGE ================= -->
+    <div id="modal-id-badge" class="modal-overlay">
+      <div class="modal-sheet">
+        <div class="sheet-handle"></div>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-base font-extrabold text-slate-900">Digital ID Card</h3>
+          <button id="btn-close-id-badge" class="p-1.5 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <div id="id-badge-container" class="my-2">
+          <!-- Dynamically populated 3D ID Badge -->
+        </div>
+
+        <div class="mt-4 flex gap-2">
+          <button id="btn-print-id-card" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 shadow-md">
+            <i data-lucide="printer" class="w-4 h-4"></i> Print / Download ID Badge
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= MODAL: ADD CUSTOM DEPARTMENT ================= -->
+    <div id="modal-add-dept" class="modal-overlay">
+      <div class="modal-sheet">
+        <div class="sheet-handle"></div>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-base font-extrabold text-slate-900">Add Department</h3>
+          <button id="btn-close-dept-modal" class="p-1.5 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <form id="form-add-dept" class="space-y-3">
+          <div class="form-group">
+            <label class="form-label" for="input-new-dept-name">Department Name</label>
+            <input type="text" id="input-new-dept-name" required placeholder="e.g. Data Science / Legal" class="form-input">
+          </div>
+          <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl text-xs shadow-md">
+            Add Department
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/store.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
