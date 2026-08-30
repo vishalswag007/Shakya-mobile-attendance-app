@@ -1,53 +1,41 @@
 /**
- * AttendEase Data Store & Auth Engine
- * Specialized for Coaching Institutes (100+ Students Scalability)
- * Tracks Roll No, Student Name, Father's Name, Contact No, Address, Batch Time, Course Name, and Photo.
+ * Apex Coaching Institute - Data Store Engine
+ * Features: LocalStorage Cache, Cloud Sync, Multi-Device Replication,
+ * WhatsApp Report Generator, and Detailed Student Attendance Analytics.
  */
 
 const STORAGE_KEYS = {
-  STUDENTS: 'attendease_students',
-  ATTENDANCE: 'attendease_attendance',
-  SETTINGS: 'attendease_settings',
-  AUTH: 'attendease_admin_auth'
+  STUDENTS: 'apex_students',
+  ATTENDANCE: 'apex_attendance',
+  SETTINGS: 'apex_settings',
+  CLOUD_SYNC: 'apex_cloud_sync_config'
 };
 
-const DEFAULT_AUTH = {
-  username: 'admin',
-  password: 'admin123',
-  isLoggedIn: true,
-  role: 'Institute Admin',
-  lastLogin: null
-};
+const DEFAULT_COURSES = [
+  'JEE Mains & Advanced',
+  'NEET Medical Batch',
+  'Class 12th Physics & Chemistry',
+  'Class 10th Board Foundation',
+  'Crash Course 2026'
+];
+
+const DEFAULT_BATCH_TIMINGS = [
+  '08:00 AM - 10:00 AM (Morning Batch 1)',
+  '10:30 AM - 12:30 PM (Morning Batch 2)',
+  '04:00 PM - 06:00 PM (Evening Batch 1)',
+  '06:30 PM - 08:30 PM (Evening Batch 2)'
+];
 
 const DEFAULT_SETTINGS = {
   orgName: 'Apex Coaching Institute',
-  orgBranch: 'Main Campus - Academic Block',
+  orgBranch: 'Main Academic Campus',
   orgLogo: '🎓',
   orgLogoUrl: null,
-  themeAccent: 'indigo',
-  workingHours: '08:00 AM - 08:30 PM',
-  gracePeriod: 15,
-  soundFeedback: true,
-  defaultBulkAction: 'present',
-  remoteApiUrl: 'https://api.attendease.app/v1',
-  cloudRoomId: 'APEX-COACHING-2026',
-  isCloudSyncActive: false,
-  courses: [
-    'Class 10th Maths & Science',
-    'Class 11th Science (PCM)',
-    'Class 11th Science (PCB)',
-    'Class 12th Physics & Chemistry',
-    'Class 12th Mathematics',
-    'JEE Mains & Advanced',
-    'NEET Medical Batch',
-    'Foundation Olympiad'
-  ],
-  batchTimings: [
-    '08:00 AM - 10:00 AM (Morning Batch 1)',
-    '10:30 AM - 12:30 PM (Morning Batch 2)',
-    '04:00 PM - 06:00 PM (Evening Batch 1)',
-    '06:30 PM - 08:30 PM (Evening Batch 2)'
-  ]
+  academicYear: '2026-2027',
+  courses: DEFAULT_COURSES,
+  batchTimings: DEFAULT_BATCH_TIMINGS,
+  cloudSyncUrl: '', // Free Firebase or REST API Endpoint for multi-phone sync
+  lastCloudSyncTime: null
 };
 
 const INITIAL_STUDENTS = [
@@ -69,7 +57,7 @@ const INITIAL_STUDENTS = [
   {
     id: '102',
     rollNo: '102',
-    name: 'Aarav Sharma', // Same student name to demonstrate Father's Name differentiation!
+    name: 'Aarav Sharma', // Duplicate name to prove Father's Name differentiation
     fatherName: 'Suresh Kumar Sharma',
     contactNo: '+91 98765 43211',
     address: '15/A, Mall Road, Kanpur',
@@ -102,7 +90,7 @@ const INITIAL_STUDENTS = [
     name: 'Rohan Mehta',
     fatherName: 'Dinesh Mehta',
     contactNo: '+91 98765 43213',
-    address: '102, Kakadeo, Coaching Hub',
+    address: '102, Kakadeo Hub',
     batchTime: '04:00 PM - 06:00 PM (Evening Batch 1)',
     courseName: 'JEE Mains & Advanced',
     email: 'rohan.mehta@example.com',
@@ -119,27 +107,27 @@ const INITIAL_STUDENTS = [
     contactNo: '+91 98765 43214',
     address: '56, Shastri Nagar',
     batchTime: '10:30 AM - 12:30 PM (Morning Batch 2)',
-    courseName: 'Class 10th Maths & Science',
-    email: '',
+    courseName: 'Class 10th Board Foundation',
+    email: 'ananya.gupta@example.com',
     role: 'Student',
     avatar: '👩‍🎓',
     photoUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    createdAt: '2026-08-05'
+    createdAt: '2026-08-03'
   },
   {
     id: '106',
     rollNo: '106',
-    name: 'Vikram Singh Verma',
-    fatherName: 'Harish Verma',
+    name: 'Vikram Singh',
+    fatherName: 'Balwant Singh',
     contactNo: '+91 98765 43215',
-    address: '22/4, Kidwai Nagar',
+    address: '12/4, Govind Nagar',
     batchTime: '06:30 PM - 08:30 PM (Evening Batch 2)',
-    courseName: 'NEET Medical Batch',
-    email: '',
+    courseName: 'Crash Course 2026',
+    email: 'vikram.singh@example.com',
     role: 'Student',
     avatar: '👨‍🎓',
-    photoUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-    createdAt: '2026-08-10'
+    photoUrl: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
+    createdAt: '2026-08-04'
   }
 ];
 
@@ -147,173 +135,67 @@ class AttendanceStore {
   constructor() {
     this.listeners = [];
     this.init();
+    this.startAutoCloudSync();
   }
 
   init() {
-    // Auto-login by default for smooth local testing
-    const existingAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
-    if (!existingAuth) {
-      localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(DEFAULT_AUTH));
-    } else {
-      try {
-        const parsedAuth = JSON.parse(existingAuth);
-        if (!parsedAuth.isLoggedIn) {
-          parsedAuth.isLoggedIn = true;
-          localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(parsedAuth));
-        }
-      } catch (e) {}
-    }
-
-    // Auto-migrate settings
-    const existingSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    if (!existingSettings) {
+    if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
       localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
-    } else {
-      try {
-        const parsed = JSON.parse(existingSettings);
-        if (!parsed.courses || !parsed.batchTimings) {
-          localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify({ ...DEFAULT_SETTINGS, ...parsed }));
-        }
-      } catch (e) {}
     }
-
-    // Auto-migrate students with Father's Name
-    const existingStudents = localStorage.getItem(STORAGE_KEYS.STUDENTS);
-    if (!existingStudents) {
+    if (!localStorage.getItem(STORAGE_KEYS.STUDENTS)) {
       localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(INITIAL_STUDENTS));
-    } else {
-      try {
-        const parsed = JSON.parse(existingStudents);
-        if (!Array.isArray(parsed) || parsed.length === 0 || !parsed[0].fatherName) {
-          localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(INITIAL_STUDENTS));
-        }
-      } catch (e) {}
     }
     if (!localStorage.getItem(STORAGE_KEYS.ATTENDANCE)) {
       const today = new Date().toISOString().split('T')[0];
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-      const dayBefore = new Date(Date.now() - 172800000).toISOString().split('T')[0];
-      
-      const seedAttendance = {
-        [dayBefore]: {
+      const initialAttendance = {
+        [today]: {
           '101': 'present',
           '102': 'present',
           '103': 'present',
           '104': 'absent',
           '105': 'present',
-          '106': 'present'
-        },
-        [yesterday]: {
-          '101': 'present',
-          '102': 'absent',
-          '103': 'present',
-          '104': 'present',
-          '105': 'leave',
-          '106': 'present'
-        },
-        [today]: {
-          '101': 'present',
-          '102': 'present',
-          '103': 'leave',
-          '104': 'present'
+          '106': 'leave'
         }
       };
-      localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(seedAttendance));
+      localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(initialAttendance));
     }
   }
 
-  subscribe(callback) {
-    this.listeners.push(callback);
+  subscribe(listener) {
+    this.listeners.push(listener);
     return () => {
-      this.listeners = this.listeners.filter(cb => cb !== callback);
+      this.listeners = this.listeners.filter(l => l !== listener);
     };
   }
 
   notify() {
-    this.listeners.forEach(callback => callback());
+    this.listeners.forEach(fn => fn());
+    this.dispatchCloudSync();
   }
 
-  // --- Admin Authentication Methods ---
-  getAuth() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.AUTH)) || DEFAULT_AUTH;
-    } catch (e) {
-      return DEFAULT_AUTH;
-    }
-  }
-
-  isLoggedIn() {
-    const auth = this.getAuth();
-    return !!auth.isLoggedIn;
-  }
-
-  loginAdmin(username, password) {
-    const auth = this.getAuth();
-    const cleanUser = username.trim().toLowerCase();
-    const cleanPass = password.trim();
-
-    if (cleanUser === auth.username.toLowerCase() && cleanPass === auth.password) {
-      auth.isLoggedIn = true;
-      auth.lastLogin = new Date().toISOString();
-      localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(auth));
-      this.notify();
-      return { success: true };
-    }
-    return { success: false, error: 'Invalid username or password' };
-  }
-
-  logoutAdmin() {
-    const auth = this.getAuth();
-    auth.isLoggedIn = false;
-    localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(auth));
-    this.notify();
-  }
-
-  updateAdminPassword(currentPass, newPass, newUsername) {
-    const auth = this.getAuth();
-    if (auth.password !== currentPass.trim()) {
-      return { success: false, error: 'Current password is incorrect' };
-    }
-    if (newPass && newPass.trim().length < 4) {
-      return { success: false, error: 'New password must be at least 4 characters' };
-    }
-
-    if (newPass) auth.password = newPass.trim();
-    if (newUsername && newUsername.trim()) auth.username = newUsername.trim();
-
-    localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(auth));
-    this.notify();
-    return { success: true };
-  }
-
-  // --- Settings & Organization Logo Methods ---
+  // ----------------------------------------------------
+  // Settings Management
+  // ----------------------------------------------------
   getSettings() {
-    let settings = DEFAULT_SETTINGS;
     try {
-      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS));
-      if (parsed && typeof parsed === 'object') {
-        settings = { ...DEFAULT_SETTINGS, ...parsed };
-      }
-    } catch (e) {
-      settings = DEFAULT_SETTINGS;
+      const s = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS));
+      return {
+        ...DEFAULT_SETTINGS,
+        ...s,
+        courses: Array.isArray(s?.courses) && s.courses.length > 0 ? s.courses : DEFAULT_COURSES,
+        batchTimings: Array.isArray(s?.batchTimings) && s.batchTimings.length > 0 ? s.batchTimings : DEFAULT_BATCH_TIMINGS
+      };
+    } catch {
+      return DEFAULT_SETTINGS;
     }
-
-    if (!Array.isArray(settings.courses) || settings.courses.length === 0) {
-      settings.courses = [...DEFAULT_SETTINGS.courses];
-    }
-    if (!Array.isArray(settings.batchTimings) || settings.batchTimings.length === 0) {
-      settings.batchTimings = [...DEFAULT_SETTINGS.batchTimings];
-    }
-
-    return settings;
   }
 
-  updateSettings(newSettings) {
+  updateSettings(updates) {
     const current = this.getSettings();
-    const updated = { ...current, ...newSettings };
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
+    const merged = { ...current, ...updates };
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(merged));
     this.notify();
-    return updated;
+    return merged;
   }
 
   updateOrgLogo(logoUrl) {
@@ -321,7 +203,7 @@ class AttendanceStore {
   }
 
   removeOrgLogo() {
-    return this.updateSettings({ orgLogoUrl: null });
+    return this.updateSettings({ orgLogoUrl: null, orgLogo: '🎓' });
   }
 
   addCourse(courseName) {
@@ -340,124 +222,88 @@ class AttendanceStore {
     this.updateSettings({ courses: settings.courses });
   }
 
-  addBatch(batchStr) {
-    if (!batchStr || !batchStr.trim()) return;
-    const settings = this.getSettings();
-    const clean = batchStr.trim();
-    if (!settings.batchTimings.includes(clean)) {
-      settings.batchTimings.push(clean);
-      this.updateSettings({ batchTimings: settings.batchTimings });
-    }
-  }
-
-  removeBatch(batchStr) {
-    const settings = this.getSettings();
-    settings.batchTimings = settings.batchTimings.filter(b => b !== batchStr);
-    this.updateSettings({ batchTimings: settings.batchTimings });
-  }
-
-  // --- Student Methods (Scalable for 100+ Students) ---
+  // ----------------------------------------------------
+  // Students Management
+  // ----------------------------------------------------
   getStudents() {
-    let list = [];
     try {
-      list = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS));
-    } catch (e) {
-      list = null;
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS));
+      if (!Array.isArray(data) || data.length === 0) {
+        localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(INITIAL_STUDENTS));
+        return INITIAL_STUDENTS;
+      }
+      return data.map(s => ({
+        id: s.id || s.rollNo || String(Date.now()),
+        rollNo: s.rollNo || s.id || '101',
+        name: s.name || 'Student',
+        fatherName: s.fatherName || s.department || 'Not Provided',
+        contactNo: s.contactNo || s.phone || '',
+        address: s.address || '',
+        batchTime: s.batchTime || DEFAULT_BATCH_TIMINGS[0],
+        courseName: s.courseName || s.department || DEFAULT_COURSES[0],
+        email: s.email || '',
+        role: 'Student',
+        avatar: s.avatar || '👨‍🎓',
+        photoUrl: s.photoUrl || null,
+        createdAt: s.createdAt || new Date().toISOString()
+      }));
+    } catch {
+      return INITIAL_STUDENTS;
     }
-
-    if (!Array.isArray(list) || list.length === 0) {
-      list = INITIAL_STUDENTS;
-      localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(INITIAL_STUDENTS));
-    }
-
-    // Auto-normalize student fields to guarantee zero runtime exceptions
-    return list.map((s, idx) => ({
-      id: String(s.rollNo || s.id || (101 + idx)),
-      rollNo: String(s.rollNo || s.id || (101 + idx)),
-      name: s.name || 'Student ' + (101 + idx),
-      fatherName: s.fatherName || 'Guardian',
-      contactNo: s.contactNo || s.phone || '+91 98765 43210',
-      address: s.address || 'Kanpur',
-      batchTime: s.batchTime || '08:00 AM - 10:00 AM (Morning Batch 1)',
-      courseName: s.courseName || s.department || 'JEE Mains & Advanced',
-      email: s.email || '',
-      avatar: s.avatar || '👨‍🎓',
-      photoUrl: s.photoUrl || null,
-      role: 'Student',
-      createdAt: s.createdAt || '2026-08-01'
-    }));
-  }
-
-  getCandidates() {
-    return this.getStudents();
   }
 
   getStudentByRollNo(rollNo) {
-    return this.getStudents().find(s => String(s.rollNo) === String(rollNo) || String(s.id) === String(rollNo));
-  }
-
-  getCandidateById(id) {
-    return this.getStudentByRollNo(id);
+    const students = this.getStudents();
+    return students.find(s => String(s.rollNo) === String(rollNo));
   }
 
   addStudent(studentData) {
     const students = this.getStudents();
-    
-    // Generate next roll number if not specified
-    let rollNo = studentData.rollNo ? String(studentData.rollNo).trim() : '';
-    if (!rollNo) {
-      const maxRoll = students.reduce((max, s) => {
-        const num = parseInt(s.rollNo, 10);
-        return (!isNaN(num) && num > max) ? num : max;
-      }, 100);
-      rollNo = String(maxRoll + 1);
-    }
+    const rollNo = studentData.rollNo ? String(studentData.rollNo).trim() : String(Date.now()).slice(-4);
 
+    const existingIndex = students.findIndex(s => String(s.rollNo) === rollNo);
     const newStudent = {
       id: rollNo,
-      rollNo: rollNo,
-      name: studentData.name ? studentData.name.trim() : 'Unknown Student',
-      fatherName: studentData.fatherName ? studentData.fatherName.trim() : 'Guardian',
-      contactNo: studentData.contactNo ? studentData.contactNo.trim() : '',
-      address: studentData.address ? studentData.address.trim() : '',
-      batchTime: studentData.batchTime || '08:00 AM - 10:00 AM (Morning Batch 1)',
-      courseName: studentData.courseName || 'General Coaching',
-      email: studentData.email ? studentData.email.trim() : '',
+      rollNo,
+      name: studentData.name.trim(),
+      fatherName: (studentData.fatherName || '').trim() || 'Parent',
+      contactNo: (studentData.contactNo || '').trim(),
+      address: (studentData.address || '').trim(),
+      batchTime: studentData.batchTime || DEFAULT_BATCH_TIMINGS[0],
+      courseName: studentData.courseName || DEFAULT_COURSES[0],
+      email: (studentData.email || '').trim(),
+      role: 'Student',
       avatar: studentData.avatar || '👨‍🎓',
       photoUrl: studentData.photoUrl || null,
-      role: 'Student',
       createdAt: new Date().toISOString().split('T')[0]
     };
 
-    // Remove existing if duplicate roll number to update
-    const filtered = students.filter(s => String(s.rollNo) !== rollNo);
-    filtered.unshift(newStudent);
+    if (existingIndex >= 0) {
+      students[existingIndex] = newStudent;
+    } else {
+      students.push(newStudent);
+    }
 
-    localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(filtered));
+    localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(students));
     this.notify();
     return newStudent;
   }
 
-  addCandidate(data) {
-    return this.addStudent(data);
-  }
-
   deleteStudent(rollNo) {
     let students = this.getStudents();
-    students = students.filter(s => String(s.rollNo) !== String(rollNo) && String(s.id) !== String(rollNo));
+    students = students.filter(s => String(s.rollNo) !== String(rollNo));
     localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(students));
     this.notify();
   }
 
-  deleteCandidate(id) {
-    this.deleteStudent(id);
-  }
-
-  // --- Attendance Methods ---
+  // ----------------------------------------------------
+  // Attendance Management
+  // ----------------------------------------------------
   getAllAttendanceRecords() {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.ATTENDANCE)) || {};
-    } catch (e) {
+      const records = JSON.parse(localStorage.getItem(STORAGE_KEYS.ATTENDANCE));
+      return records && typeof records === 'object' ? records : {};
+    } catch {
       return {};
     }
   }
@@ -472,7 +318,7 @@ class AttendanceStore {
     if (!all[dateStr]) {
       all[dateStr] = {};
     }
-    
+
     if (all[dateStr][rollNo] === status) {
       delete all[dateStr][rollNo];
     } else {
@@ -501,65 +347,88 @@ class AttendanceStore {
 
   getStatsForDate(dateStr, filteredStudents = null) {
     const students = filteredStudents || this.getStudents();
-    const attendance = this.getAttendanceForDate(dateStr);
-    const total = students.length;
+    const attendanceMap = this.getAttendanceForDate(dateStr);
 
     let present = 0;
     let absent = 0;
     let leave = 0;
 
     students.forEach(s => {
-      const status = attendance[s.rollNo];
+      const status = attendanceMap[s.rollNo];
       if (status === 'present') present++;
       else if (status === 'absent') absent++;
       else if (status === 'leave') leave++;
     });
 
-    const unmarked = Math.max(0, total - (present + absent + leave));
-    const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+    const total = students.length;
+    const marked = present + absent + leave;
+    const rate = marked > 0 ? Math.round((present / marked) * 100) : 0;
 
-    return { total, present, absent, leave, unmarked, rate };
+    return { total, present, absent, leave, marked, rate };
   }
 
-  // --- Specialized Single Student History Methods (Weekly & Monthly) ---
-  getStudentHistoryWeekly(rollNo, anchorDateStr) {
+  // ----------------------------------------------------
+  // Analytics: Individual Student Weekly & Monthly History
+  // ----------------------------------------------------
+  getCandidateAttendanceHistory(rollNo) {
     const all = this.getAllAttendanceRecords();
-    const anchor = new Date(anchorDateStr + 'T00:00:00');
-    
-    // Get Monday of the week
-    const day = anchor.getDay();
-    const diffToMonday = anchor.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(anchor.setDate(diffToMonday));
+    const history = [];
+    const dates = Object.keys(all).sort().reverse();
 
-    const weekLogs = [];
-    let present = 0, absent = 0, leave = 0, totalClasses = 0;
+    dates.forEach(date => {
+      const dayRecord = all[date];
+      if (dayRecord && dayRecord[rollNo]) {
+        history.push({
+          date,
+          status: dayRecord[rollNo]
+        });
+      }
+    });
+
+    return history;
+  }
+
+  getStudentHistoryWeekly(rollNo, referenceDateStr) {
+    const ref = new Date(referenceDateStr + 'T00:00:00');
+    const dayOfWeek = ref.getDay(); // 0 is Sunday
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    
+    const monday = new Date(ref);
+    monday.setDate(ref.getDate() + mondayOffset);
+
+    const weekDays = [];
+    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    let present = 0, absent = 0, leave = 0, unmarked = 0;
 
     for (let i = 0; i < 7; i++) {
       const current = new Date(monday);
       current.setDate(monday.getDate() + i);
-      const dateKey = current.toISOString().split('T')[0];
-
-      const dayName = current.toLocaleDateString('en-US', { weekday: 'short' });
-      const status = (all[dateKey] && all[dateKey][rollNo]) || 'unmarked';
+      const dStr = current.toISOString().split('T')[0];
+      const att = this.getAttendanceForDate(dStr);
+      const status = att[rollNo] || 'unmarked';
 
       if (status === 'present') present++;
       else if (status === 'absent') absent++;
       else if (status === 'leave') leave++;
+      else unmarked++;
 
-      if (status !== 'unmarked') totalClasses++;
-
-      weekLogs.push({
-        date: dateKey,
-        dayName,
+      weekDays.push({
+        date: dStr,
+        dayName: dayNames[i],
         status
       });
     }
 
-    const rate = totalClasses > 0 ? Math.round((present / totalClasses) * 100) : (present > 0 ? 100 : 0);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    const totalClasses = present + absent + leave;
+    const rate = totalClasses > 0 ? Math.round((present / totalClasses) * 100) : 100;
 
     return {
-      weekRange: `${weekLogs[0].date} to ${weekLogs[6].date}`,
-      logs: weekLogs,
+      weekRange: `${monday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${sunday.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+      logs: weekDays,
       present,
       absent,
       leave,
@@ -569,43 +438,38 @@ class AttendanceStore {
   }
 
   getStudentHistoryMonthly(rollNo, yearMonthStr) {
-    // yearMonthStr: 'YYYY-MM'
-    const all = this.getAllAttendanceRecords();
-    const [year, month] = yearMonthStr.split('-').map(Number);
+    const [yearStr, monthStr] = yearMonthStr.split('-');
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10); // 1-12
+
     const daysInMonth = new Date(year, month, 0).getDate();
+    const logs = [];
 
-    const monthLogs = [];
-    let present = 0, absent = 0, leave = 0, totalClasses = 0;
+    let present = 0, absent = 0, leave = 0;
 
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dd = String(d).padStart(2, '0');
-      const mm = String(month).padStart(2, '0');
-      const dateKey = `${year}-${mm}-${dd}`;
-
-      const dateObj = new Date(year, month - 1, d);
-      const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
-      const status = (all[dateKey] && all[dateKey][rollNo]) || 'unmarked';
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const att = this.getAttendanceForDate(dStr);
+      const status = att[rollNo] || 'unmarked';
 
       if (status === 'present') present++;
       else if (status === 'absent') absent++;
       else if (status === 'leave') leave++;
 
-      if (status !== 'unmarked') totalClasses++;
-
-      monthLogs.push({
-        date: dateKey,
-        day: d,
-        dayName,
+      logs.push({
+        day,
+        date: dStr,
         status
       });
     }
 
-    const rate = totalClasses > 0 ? Math.round((present / totalClasses) * 100) : (present > 0 ? 100 : 0);
+    const totalClasses = present + absent + leave;
+    const rate = totalClasses > 0 ? Math.round((present / totalClasses) * 100) : 100;
+    const monthName = new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
     return {
-      yearMonth: yearMonthStr,
-      monthName: new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-      logs: monthLogs,
+      monthName,
+      logs,
       present,
       absent,
       leave,
@@ -614,52 +478,129 @@ class AttendanceStore {
     };
   }
 
-  getCandidateAttendanceHistory(rollNo) {
-    const all = this.getAllAttendanceRecords();
-    const history = [];
+  // ----------------------------------------------------
+  // WhatsApp Report Formatter
+  // ----------------------------------------------------
+  generateWhatsAppReport(dateStr) {
+    const settings = this.getSettings();
+    const students = this.getStudents();
+    const attendanceMap = this.getAttendanceForDate(dateStr);
+    const stats = this.getStatsForDate(dateStr);
 
-    Object.keys(all).sort().reverse().forEach(date => {
-      if (all[date][rollNo]) {
-        history.push({
-          date,
-          status: all[date][rollNo]
-        });
+    const absentList = [];
+    const leaveList = [];
+
+    students.forEach(s => {
+      const st = attendanceMap[s.rollNo];
+      if (st === 'absent') {
+        absentList.push(`• *Roll ${s.rollNo}*: ${s.name} (S/o ${s.fatherName}) - ${s.courseName}`);
+      } else if (st === 'leave') {
+        leaveList.push(`• *Roll ${s.rollNo}*: ${s.name} (S/o ${s.fatherName})`);
       }
     });
 
-    return history;
+    let msg = `🎓 *${settings.orgName}*\n`;
+    msg += `📅 *Date:* ${dateStr}\n`;
+    msg += `📊 *Summary:* Total: ${stats.total} | Present: ${stats.present} ✅ | Absent: ${stats.absent} ❌ | Leave: ${stats.leave} ⏳\n`;
+    msg += `📈 *Attendance Rate:* ${stats.rate}%\n`;
+    msg += `--------------------------------\n`;
+
+    if (absentList.length > 0) {
+      msg += `\n❌ *ABSENT STUDENTS (${absentList.length}):*\n`;
+      msg += absentList.join('\n') + '\n';
+    } else {
+      msg += `\n✨ *100% Attendance - No Absentees!*\n`;
+    }
+
+    if (leaveList.length > 0) {
+      msg += `\n⏳ *ON LEAVE (${leaveList.length}):*\n`;
+      msg += leaveList.join('\n') + '\n';
+    }
+
+    msg += `\n_Generated via Apex Attendance System_`;
+    return msg;
   }
 
-  // --- Cloud Room & Backup ---
-  setCloudRoomId(roomId) {
-    this.updateSettings({ cloudRoomId: roomId.trim() });
+  // ----------------------------------------------------
+  // Cloud Database Sync Engine (Multi-Device Anywhere)
+  // ----------------------------------------------------
+  async dispatchCloudSync() {
+    const settings = this.getSettings();
+    if (!settings.cloudSyncUrl || !settings.cloudSyncUrl.startsWith('http')) return;
+
+    try {
+      const payload = {
+        settings,
+        students: this.getStudents(),
+        attendance: this.getAllAttendanceRecords(),
+        lastSync: new Date().toISOString()
+      };
+
+      await fetch(settings.cloudSyncUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      console.log('Cloud sync completed successfully');
+    } catch (err) {
+      console.warn('Cloud sync offline / failed:', err);
+    }
   }
 
+  async pullFromCloud() {
+    const settings = this.getSettings();
+    if (!settings.cloudSyncUrl || !settings.cloudSyncUrl.startsWith('http')) return false;
+
+    try {
+      const res = await fetch(settings.cloudSyncUrl);
+      if (!res.ok) return false;
+      const data = await res.json();
+      if (data && data.students && data.attendance) {
+        localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(data.students));
+        localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(data.attendance));
+        if (data.settings) {
+          localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify({ ...DEFAULT_SETTINGS, ...data.settings }));
+        }
+        this.notify();
+        return true;
+      }
+    } catch (err) {
+      console.warn('Cloud pull failed:', err);
+    }
+    return false;
+  }
+
+  startAutoCloudSync() {
+    // Poll cloud every 30 seconds if configured
+    setInterval(() => {
+      this.pullFromCloud();
+    }, 30000);
+  }
+
+  // ----------------------------------------------------
+  // Backup & Restore
+  // ----------------------------------------------------
   exportFullDataJSON() {
-    const data = {
-      version: '2.0.0',
-      type: 'Coaching Institute Attendance',
+    return JSON.stringify({
+      version: '2.0-coaching',
       exportedAt: new Date().toISOString(),
       settings: this.getSettings(),
       students: this.getStudents(),
       attendance: this.getAllAttendanceRecords()
-    };
-    return JSON.stringify(data, null, 2);
+    }, null, 2);
   }
 
   importFullDataJSON(jsonStr) {
     try {
-      const parsed = JSON.parse(jsonStr);
-      if (parsed.settings) {
-        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(parsed.settings));
+      const data = JSON.parse(jsonStr);
+      if (data.students && Array.isArray(data.students)) {
+        localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(data.students));
       }
-      if (parsed.students && Array.isArray(parsed.students)) {
-        localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(parsed.students));
-      } else if (parsed.candidates && Array.isArray(parsed.candidates)) {
-        localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(parsed.candidates));
+      if (data.attendance && typeof data.attendance === 'object') {
+        localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(data.attendance));
       }
-      if (parsed.attendance && typeof parsed.attendance === 'object') {
-        localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(parsed.attendance));
+      if (data.settings && typeof data.settings === 'object') {
+        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(data.settings));
       }
       this.notify();
       return { success: true };
@@ -669,5 +610,4 @@ class AttendanceStore {
   }
 }
 
-// Global Store Instance
 window.attendanceStore = new AttendanceStore();

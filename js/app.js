@@ -1,7 +1,7 @@
 /**
- * AttendEase Coaching Institute Edition (100+ Students Scalability)
- * Handles Student Registration (Roll No, Name, Father Name, Contact, Address, Batch, Course, Photo),
- * Prominent Active Month Display, Batch/Course Filtering, and Dedicated Weekly/Monthly Student History.
+ * Apex Coaching Institute - 3D Mobile-First Web Application Controller
+ * Handles 3D Touch Interactions, WhatsApp Attendance Sharing, Cloud Sync,
+ * Individual Student History & Directory.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,28 +15,16 @@ document.addEventListener('DOMContentLoaded', () => {
   let historyStatusFilter = 'all';
   let selectedStudentRollNo = null;
   let historyViewMode = 'weekly'; // 'weekly' | 'monthly'
-  let deferredPrompt = null;
-  let audioCtx = null;
-
-  // DOM Elements - Auth & Brand
-  const adminLockscreen = document.getElementById('admin-lockscreen');
-  const formAdminLogin = document.getElementById('form-admin-login');
-  const loginUsername = document.getElementById('login-username');
-  const loginPassword = document.getElementById('login-password');
-  const loginErrorMsg = document.getElementById('login-error-msg');
-  const btnHeaderLogout = document.getElementById('btn-header-logout');
-  const btnAdminLogoutSettings = document.getElementById('btn-admin-logout-settings');
-  const formUpdateAdminPass = document.getElementById('form-update-admin-pass');
-  const adminCurrentPass = document.getElementById('admin-current-pass');
-  const adminNewPass = document.getElementById('admin-new-pass');
 
   // Header Brand & Logo DOM
   const headerBrandEmoji = document.getElementById('header-brand-emoji');
   const headerBrandImg = document.getElementById('header-brand-img');
   const headerOrgTitle = document.getElementById('header-org-title');
   const headerOrgSubtitle = document.getElementById('header-org-subtitle');
-  const loginLogoEmoji = document.getElementById('login-logo-emoji');
-  const loginLogoImg = document.getElementById('login-logo-img');
+
+  // WhatsApp Share Buttons
+  const btnShareWhatsappToday = document.getElementById('btn-share-whatsapp-today');
+  const btnShareWhatsappReport = document.getElementById('btn-share-whatsapp-report');
 
   // Logo Upload DOM
   const inputOrgLogoFile = document.getElementById('input-org-logo-file');
@@ -44,18 +32,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const settingsLogoEmoji = document.getElementById('settings-logo-emoji');
   const btnRemoveOrgLogo = document.getElementById('btn-remove-org-logo');
 
-  // Month Display & Gauge DOM
+  // Month Display
   const currentMonthDisplay = document.getElementById('current-month-display');
-  const gaugeCircleStroke = document.getElementById('gauge-circle-stroke');
-  const gaugePercentText = document.getElementById('gauge-percent-text');
-  const gaugeStatusSubtext = document.getElementById('gauge-status-subtext');
 
   // Attendance Tab DOM
-  const liveClock = document.getElementById('live-clock');
   const dateInput = document.getElementById('attendance-date-input');
   const datePrevBtn = document.getElementById('date-prev');
   const dateNextBtn = document.getElementById('date-next');
-  const btnQuickToday = document.getElementById('btn-quick-today');
   const dateBadgeToday = document.getElementById('date-badge-today');
   const attendanceList = document.getElementById('attendance-list');
   const attendanceSearch = document.getElementById('attendance-search');
@@ -82,19 +65,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Date-wise Logs Tab DOM
   const historyDatePicker = document.getElementById('history-date-picker');
-  const historySummaryDate = document.getElementById('history-summary-date');
   const historySummaryRate = document.getElementById('history-summary-rate');
-  const histPresent = document.getElementById('hist-present');
-  const histAbsent = document.getElementById('hist-absent');
-  const histLeave = document.getElementById('hist-leave');
   const historyRecordsList = document.getElementById('history-records-list');
 
   // Student Registration Form DOM
   const modalAddCandidate = document.getElementById('modal-add-candidate');
   const formAddCandidate = document.getElementById('form-add-candidate');
   const btnOpenAddCandidate = document.getElementById('btn-open-add-candidate');
-  const btnNewCandidateAction = document.getElementById('btn-new-candidate-action');
-  const fabAddCandidate = document.getElementById('fab-add-candidate');
   const btnCloseCandidateModal = document.getElementById('btn-close-candidate-modal');
   const candidatePhotoFile = document.getElementById('candidate-photo-file');
   const photoPreviewImg = document.getElementById('photo-preview-img');
@@ -132,85 +109,34 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnSaveBranding = document.getElementById('btn-save-branding');
   const btnExportBackup = document.getElementById('btn-export-backup');
   const inputImportBackup = document.getElementById('input-import-backup');
+  const inputCloudUrl = document.getElementById('input-cloud-url');
+  const btnSaveCloudSync = document.getElementById('btn-save-cloud-sync');
+  const btnPullCloudData = document.getElementById('btn-pull-cloud-data');
 
   // Export Buttons
   const btnExportExcel = document.getElementById('btn-export-excel');
-  const btnSyncSheets = document.getElementById('btn-sync-sheets');
-  const toggleFrameBtn = document.getElementById('toggle-frame-btn');
   const resetDataBtn = document.getElementById('reset-data-btn');
-  const deviceContainer = document.getElementById('device-container');
 
   // ----------------------------------------------------
-  // Initialization & Auth Guard
+  // Initialization
   // ----------------------------------------------------
-  checkAdminAuth();
-  initClock();
   initDatePickers();
   applySettingsToUI();
   bindNavigation();
   bindEvents();
   renderAll();
 
-  // PWA Install Event Interceptor
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-  });
+  // Try initial background pull from cloud if configured
+  window.attendanceStore.pullFromCloud();
 
   // Subscribe to store updates
   window.attendanceStore.subscribe(() => {
-    checkAdminAuth();
     applySettingsToUI();
     renderAll();
   });
 
   // ----------------------------------------------------
-  // Audio Feedback Synthesizer
-  // ----------------------------------------------------
-  function playTactileClick() {
-    try {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(1400, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.04);
-
-      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
-
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.04);
-    } catch (e) {}
-
-    if (navigator.vibrate) {
-      navigator.vibrate(10);
-    }
-  }
-
-  // ----------------------------------------------------
-  // Auth Functions
-  // ----------------------------------------------------
-  function checkAdminAuth() {
-    const isLoggedIn = window.attendanceStore.isLoggedIn();
-    if (isLoggedIn) {
-      adminLockscreen.classList.add('hidden');
-    } else {
-      adminLockscreen.classList.remove('hidden');
-    }
-  }
-
-  // ----------------------------------------------------
-  // Date & Month Helpers
+  // Date Helpers
   // ----------------------------------------------------
   function getTodayDateStr() {
     const today = new Date();
@@ -245,12 +171,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const today = getTodayDateStr();
     if (currentDate === today) {
       dateBadgeToday.textContent = 'TODAY';
-      dateBadgeToday.className = 'text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold shadow-sm';
+      dateBadgeToday.className = 'text-[9px] bg-emerald-400 text-emerald-950 px-2 py-0.5 rounded-full font-black';
     } else {
       const d = new Date(currentDate + 'T00:00:00');
       const formatted = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       dateBadgeToday.textContent = formatted.toUpperCase();
-      dateBadgeToday.className = 'text-[10px] bg-indigo-100 text-indigo-800 border border-indigo-200 px-2.5 py-0.5 rounded-full font-bold shadow-sm';
+      dateBadgeToday.className = 'text-[9px] bg-white text-indigo-950 px-2 py-0.5 rounded-full font-black';
     }
     updateMonthDisplay();
   }
@@ -265,50 +191,56 @@ document.addEventListener('DOMContentLoaded', () => {
     renderStats();
   }
 
-  function initClock() {
-    function updateClock() {
-      const now = new Date();
-      liveClock.textContent = now.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      });
+  // ----------------------------------------------------
+  // Navigation (3D Tabs)
+  // ----------------------------------------------------
+  function switchTab(targetTab) {
+    document.querySelectorAll('.bottom-tab-btn-3d, .nav-link-btn').forEach(btn => {
+      if (btn.getAttribute('data-tab') === targetTab) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    document.querySelectorAll('.tab-content-panel').forEach(pane => {
+      pane.classList.remove('active');
+    });
+
+    const activePane = document.getElementById(targetTab);
+    if (activePane) {
+      activePane.classList.add('active');
     }
-    updateClock();
-    setInterval(updateClock, 10000);
+
+    if (targetTab === 'tab-student-history') {
+      renderStudentHistoryDropdown();
+      renderIndividualStudentHistory();
+    }
+
+    if (window.lucide && lucide.createIcons) lucide.createIcons();
+  }
+
+  function bindNavigation() {
+    document.querySelectorAll('.bottom-tab-btn-3d, .nav-link-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetTab = btn.getAttribute('data-tab');
+        switchTab(targetTab);
+      });
+    });
   }
 
   // ----------------------------------------------------
-  // Settings & Theme Management
+  // Settings & Theme
   // ----------------------------------------------------
   function applySettingsToUI() {
     const settings = window.attendanceStore.getSettings();
 
-    // Theme Accent
-    document.body.className = `theme-${settings.themeAccent || 'indigo'}`;
-    document.querySelectorAll('.theme-swatch').forEach(swatch => {
-      const theme = swatch.getAttribute('data-theme');
-      const checkIcon = swatch.querySelector('i');
-      if (theme === settings.themeAccent) {
-        swatch.classList.add('border-slate-900');
-        swatch.classList.remove('border-transparent');
-        if (checkIcon) checkIcon.classList.remove('opacity-0');
-      } else {
-        swatch.classList.remove('border-slate-900');
-        swatch.classList.add('border-transparent');
-        if (checkIcon) checkIcon.classList.add('opacity-0');
-      }
-    });
-
-    // Branding Header Logo (Uploaded Image vs Emoji)
+    // Branding Logo
     if (settings.orgLogoUrl) {
       headerBrandImg.src = settings.orgLogoUrl;
       headerBrandImg.classList.remove('hidden');
       headerBrandEmoji.classList.add('hidden');
-
-      loginLogoImg.src = settings.orgLogoUrl;
-      loginLogoImg.classList.remove('hidden');
-      loginLogoEmoji.classList.add('hidden');
 
       settingsLogoImg.src = settings.orgLogoUrl;
       settingsLogoImg.classList.remove('hidden');
@@ -319,42 +251,37 @@ document.addEventListener('DOMContentLoaded', () => {
       headerBrandEmoji.classList.remove('hidden');
       headerBrandEmoji.textContent = settings.orgLogo || '🎓';
 
-      loginLogoImg.classList.add('hidden');
-      loginLogoEmoji.classList.remove('hidden');
-      loginLogoEmoji.textContent = settings.orgLogo || '🎓';
-
       settingsLogoImg.classList.add('hidden');
       settingsLogoEmoji.classList.remove('hidden');
       settingsLogoEmoji.textContent = settings.orgLogo || '🎓';
       btnRemoveOrgLogo.classList.add('hidden');
     }
 
-    headerOrgTitle.innerHTML = `${escapeHtml(settings.orgName || 'Apex Coaching Institute')}`;
-    headerOrgSubtitle.textContent = settings.orgBranch || 'Main Campus';
+    headerOrgTitle.textContent = settings.orgName || 'Apex Coaching';
+    headerOrgSubtitle.textContent = (settings.orgBranch || 'Attendance Portal');
 
-    // Settings Inputs
     settingOrgName.value = settings.orgName || '';
     settingOrgBranch.value = settings.orgBranch || '';
+    inputCloudUrl.value = settings.cloudSyncUrl || '';
 
-    // Render Filter Chips and Dropdowns
     renderCourseAndBatchUI(settings.courses || [], settings.batchTimings || []);
   }
 
   function renderCourseAndBatchUI(courses, batchTimings) {
     // 1. Batch Filter Chips
     batchFilterChips.innerHTML = `
-      <button class="chip ${currentBatchFilter === 'all' ? 'active bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200'} text-[11px] px-3 py-1 rounded-full font-bold whitespace-nowrap" data-batch="all">All Batches</button>
+      <button class="pill-filter-btn ${currentBatchFilter === 'all' ? 'active' : ''}" data-batch="all">All Batches</button>
       ${batchTimings.map(b => {
-        const shortName = b.split('(')[1] ? b.split('(')[1].replace(')', '') : b.substring(0, 15);
+        const shortName = b.split('(')[1] ? b.split('(')[1].replace(')', '') : (b ? b.substring(0, 14) : '');
         return `
-          <button class="chip ${currentBatchFilter === b ? 'active bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200'} text-[11px] px-3 py-1 rounded-full font-bold whitespace-nowrap" data-batch="${escapeHtml(b)}">
+          <button class="pill-filter-btn ${currentBatchFilter === b ? 'active' : ''}" data-batch="${escapeHtml(b)}">
             ${escapeHtml(shortName)}
           </button>
         `;
       }).join('')}
     `;
 
-    batchFilterChips.querySelectorAll('.chip').forEach(chip => {
+    batchFilterChips.querySelectorAll('.pill-filter-btn').forEach(chip => {
       chip.addEventListener('click', () => {
         currentBatchFilter = chip.getAttribute('data-batch');
         renderCourseAndBatchUI(courses, batchTimings);
@@ -365,15 +292,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 2. Course Filter Chips
     courseFilterChips.innerHTML = `
-      <button class="chip ${currentCourseFilter === 'all' ? 'active bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200'} text-[11px] px-3 py-1 rounded-full font-bold whitespace-nowrap" data-course="all">All Courses</button>
+      <button class="pill-filter-btn ${currentCourseFilter === 'all' ? 'active' : ''}" data-course="all">All Courses</button>
       ${courses.map(c => `
-        <button class="chip ${currentCourseFilter === c ? 'active bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200'} text-[11px] px-3 py-1 rounded-full font-bold whitespace-nowrap" data-course="${escapeHtml(c)}">
+        <button class="pill-filter-btn ${currentCourseFilter === c ? 'active' : ''}" data-course="${escapeHtml(c)}">
           ${escapeHtml(c)}
         </button>
       `).join('')}
     `;
 
-    courseFilterChips.querySelectorAll('.chip').forEach(chip => {
+    courseFilterChips.querySelectorAll('.pill-filter-btn').forEach(chip => {
       chip.addEventListener('click', () => {
         currentCourseFilter = chip.getAttribute('data-course');
         renderCourseAndBatchUI(courses, batchTimings);
@@ -382,11 +309,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // 3. Populate Registration Selects
+    // 3. Dropdowns
     studentCourse.innerHTML = courses.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
     studentBatch.innerHTML = batchTimings.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
 
-    // 4. Settings Course List
+    // 4. Settings Course Tags
     settingsDeptTags.innerHTML = courses.map(c => `
       <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700">
         ${escapeHtml(c)}
@@ -406,60 +333,21 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide && lucide.createIcons) lucide.createIcons();
   }
 
   // ----------------------------------------------------
-  // Avatar / Photo Renderer Helper
+  // Avatar Renderer
   // ----------------------------------------------------
   function renderAvatar(student) {
     if (student.photoUrl) {
-      return `<img src="${escapeHtml(student.photoUrl)}" alt="${escapeHtml(student.name)}" class="student-avatar-img">`;
+      return `<img src="${escapeHtml(student.photoUrl)}" alt="${escapeHtml(student.name)}" class="w-full h-full object-cover rounded-inherit">`;
     }
     return `<span>${student.avatar || '👨‍🎓'}</span>`;
   }
 
   // ----------------------------------------------------
-  // Tab Navigation
-  // ----------------------------------------------------
-  function bindNavigation() {
-    const dockItems = document.querySelectorAll('.dock-item');
-    dockItems.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const targetTab = btn.getAttribute('data-tab');
-        
-        dockItems.forEach(i => i.classList.remove('active'));
-        btn.classList.add('active');
-
-        document.querySelectorAll('.tab-pane').forEach(pane => {
-          pane.classList.add('hidden');
-          pane.classList.remove('active');
-        });
-
-        const activePane = document.getElementById(targetTab);
-        if (activePane) {
-          activePane.classList.remove('hidden');
-          activePane.classList.add('active');
-        }
-
-        if (targetTab === 'tab-attendance' || targetTab === 'tab-candidates') {
-          fabAddCandidate.style.display = 'flex';
-        } else {
-          fabAddCandidate.style.display = 'none';
-        }
-
-        if (targetTab === 'tab-student-history') {
-          renderStudentHistoryDropdown();
-          renderIndividualStudentHistory();
-        }
-
-        if (window.lucide) lucide.createIcons();
-      });
-    });
-  }
-
-  // ----------------------------------------------------
-  // Rendering Logic (Coaching Students)
+  // Rendering Logic
   // ----------------------------------------------------
   function getFilteredStudents() {
     const students = window.attendanceStore.getStudents() || [];
@@ -485,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderStudentHistoryDropdown();
     renderIndividualStudentHistory();
     renderHistory();
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide && lucide.createIcons) lucide.createIcons();
   }
 
   function renderStats() {
@@ -495,13 +383,6 @@ document.addEventListener('DOMContentLoaded', () => {
     statPresent.textContent = stats.present;
     statAbsent.textContent = stats.absent;
     statLeave.textContent = stats.leave;
-
-    if (gaugeCircleStroke) {
-      gaugeCircleStroke.setAttribute('stroke-dasharray', `${stats.rate}, 100`);
-      gaugePercentText.textContent = `${stats.rate}%`;
-      const markedCount = stats.present + stats.absent + stats.leave;
-      gaugeStatusSubtext.textContent = `${markedCount} of ${stats.total} students marked today`;
-    }
   }
 
   function renderAttendanceList() {
@@ -510,12 +391,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (filtered.length === 0) {
       attendanceList.innerHTML = `
-        <div class="text-center py-12 px-4 bg-white rounded-3xl border border-dashed border-slate-300 shadow-sm">
-          <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400">
-            <i data-lucide="user-x" class="w-6 h-6"></i>
+        <div class="text-center py-10 px-4 bg-white rounded-2xl border border-dashed border-slate-200 shadow-sm">
+          <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center mx-auto mb-2 text-indigo-600">
+            <i data-lucide="users" class="w-5 h-5"></i>
           </div>
-          <p class="text-sm font-bold text-slate-800">No students match filter</p>
-          <p class="text-xs text-slate-500 mt-1">Adjust your search or register a new student.</p>
+          <h3 class="text-xs font-bold text-slate-800">No students match current filters</h3>
+          <p class="text-[11px] text-slate-400 mt-0.5">Reset filter or add new student.</p>
         </div>
       `;
       return;
@@ -534,57 +415,58 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (isLeave) statusCardClass = 'status-leave';
 
       return `
-        <div class="student-card ${statusCardClass}" data-roll="${student.rollNo}">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3 cursor-pointer student-info-trigger" data-roll="${student.rollNo}">
-              <div class="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-2xl shadow-sm overflow-hidden shrink-0">
-                ${renderAvatar(student)}
+        <div class="student-card-3d ${statusCardClass}" data-roll="${student.rollNo}">
+          <div>
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-3 cursor-pointer student-info-trigger" data-roll="${student.rollNo}">
+                <div class="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-xl overflow-hidden shrink-0 shadow-sm">
+                  ${renderAvatar(student)}
+                </div>
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-800 font-mono font-black border border-indigo-200">Roll ${student.rollNo}</span>
+                    <h4 class="font-black text-sm text-slate-900 leading-tight">${escapeHtml(student.name)}</h4>
+                  </div>
+                  
+                  <!-- 3D Father's Name Badge -->
+                  <div class="mt-1">
+                    <span class="father-name-badge-3d">
+                      👨‍👦 S/o ${escapeHtml(student.fatherName)}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div class="flex items-center gap-2">
-                  <span class="text-[10px] px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 font-mono font-black border border-indigo-200">Roll: ${student.rollNo}</span>
-                  <h4 class="font-extrabold text-sm text-slate-900">${escapeHtml(student.name)}</h4>
-                </div>
-                
-                <!-- Father's Name (Distinct differentiator) -->
-                <div class="mt-1 flex items-center gap-1.5 flex-wrap">
-                  <span class="father-name-badge">
-                    👨 S/o ${escapeHtml(student.fatherName)}
-                  </span>
-                </div>
 
-                <div class="flex items-center gap-1.5 mt-1 flex-wrap">
-                  <span class="batch-pill">${escapeHtml(student.batchTime.split('(')[0])}</span>
-                  <span class="course-pill">${escapeHtml(student.courseName)}</span>
-                </div>
+              <div>
+                ${renderStatusBadge(status)}
               </div>
             </div>
 
-            <div class="text-right">
-              ${renderStatusBadge(status)}
+            <div class="flex items-center gap-1.5 mt-2 flex-wrap">
+              <span class="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100">${escapeHtml(student.batchTime.split('(')[0])}</span>
+              <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">${escapeHtml(student.courseName)}</span>
             </div>
           </div>
 
-          <!-- 3D Attendance Buttons -->
-          <div class="attendance-actions">
-            <button class="btn-status btn-present ${isPresent ? 'active' : ''}" data-status="present" data-roll="${student.rollNo}">
-              <i data-lucide="check" class="w-3.5 h-3.5"></i> Present
+          <!-- 3D Tactile Attendance Buttons -->
+          <div class="attendance-3d-btn-group pt-1 border-t border-slate-100">
+            <button class="btn-3d-status btn-present ${isPresent ? 'active' : ''}" data-status="present" data-roll="${student.rollNo}">
+              <i data-lucide="check" class="w-4 h-4"></i> Present
             </button>
-            <button class="btn-status btn-absent ${isAbsent ? 'active' : ''}" data-status="absent" data-roll="${student.rollNo}">
-              <i data-lucide="x" class="w-3.5 h-3.5"></i> Absent
+            <button class="btn-3d-status btn-absent ${isAbsent ? 'active' : ''}" data-status="absent" data-roll="${student.rollNo}">
+              <i data-lucide="x" class="w-4 h-4"></i> Absent
             </button>
-            <button class="btn-status btn-leave ${isLeave ? 'active' : ''}" data-status="leave" data-roll="${student.rollNo}">
-              <i data-lucide="clock" class="w-3.5 h-3.5"></i> Leave
+            <button class="btn-3d-status btn-leave ${isLeave ? 'active' : ''}" data-status="leave" data-roll="${student.rollNo}">
+              <i data-lucide="clock" class="w-4 h-4"></i> Leave
             </button>
           </div>
         </div>
       `;
     }).join('');
 
-    attendanceList.querySelectorAll('.btn-status').forEach(btn => {
+    attendanceList.querySelectorAll('.btn-3d-status').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        playTactileClick();
         const rollNo = btn.getAttribute('data-roll');
         const status = btn.getAttribute('data-status');
         window.attendanceStore.markAttendance(rollNo, currentDate, status);
@@ -601,34 +483,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderStatusBadge(status) {
     if (status === 'present') {
-      return `<span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-sm">PRESENT</span>`;
+      return `<span class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">PRESENT</span>`;
     }
     if (status === 'absent') {
-      return `<span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200 shadow-sm">ABSENT</span>`;
+      return `<span class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300">ABSENT</span>`;
     }
     if (status === 'leave') {
-      return `<span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 shadow-sm">LEAVE</span>`;
+      return `<span class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">LEAVE</span>`;
     }
     return `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">UNMARKED</span>`;
   }
 
   function renderCandidatesDirectory() {
-    const students = window.attendanceStore.getStudents();
+    const students = window.attendanceStore.getStudents() || [];
     candidateCountBadge.textContent = students.length;
 
     const filtered = students.filter(s => {
       if (!candidateSearchQuery) return true;
-      const q = candidateSearchQuery.toLowerCase();
-      return s.name.toLowerCase().includes(q) ||
-             String(s.rollNo).toLowerCase().includes(q) ||
-             s.fatherName.toLowerCase().includes(q) ||
-             s.courseName.toLowerCase().includes(q) ||
-             s.batchTime.toLowerCase().includes(q);
+      const q = candidateSearchQuery.trim().toLowerCase();
+      return (s.name && s.name.toLowerCase().includes(q)) ||
+             (s.rollNo && String(s.rollNo).toLowerCase().includes(q)) ||
+             (s.fatherName && s.fatherName.toLowerCase().includes(q)) ||
+             (s.courseName && s.courseName.toLowerCase().includes(q)) ||
+             (s.batchTime && s.batchTime.toLowerCase().includes(q));
     });
 
     if (filtered.length === 0) {
       candidatesDirectoryList.innerHTML = `
-        <div class="text-center py-10 text-slate-400 text-xs bg-white border border-slate-200 rounded-3xl shadow-sm">
+        <div class="col-span-full text-center py-12 text-slate-400 text-sm bg-white border border-slate-200 rounded-3xl shadow-sm">
           No students match "${escapeHtml(candidateSearchQuery)}"
         </div>
       `;
@@ -642,30 +524,34 @@ document.addEventListener('DOMContentLoaded', () => {
       const rate = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 100;
 
       return `
-        <div class="bg-white border border-slate-200 rounded-2xl p-3.5 flex items-center justify-between hover:border-slate-300 transition shadow-3d-card">
-          <div class="flex items-center gap-3 cursor-pointer student-row" data-roll="${s.rollNo}">
-            <div class="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-2xl overflow-hidden shrink-0 shadow-sm">
+        <div class="student-card-3d flex flex-col justify-between gap-3">
+          <div class="flex items-start gap-3.5 cursor-pointer student-row" data-roll="${s.rollNo}">
+            <div class="w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-2xl overflow-hidden shrink-0 shadow-sm">
               ${renderAvatar(s)}
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 font-mono font-black">Roll: ${s.rollNo}</span>
-                <h4 class="font-extrabold text-sm text-slate-900">${escapeHtml(s.name)}</h4>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 font-mono font-black">Roll ${s.rollNo}</span>
+                <h4 class="font-black text-sm text-slate-900">${escapeHtml(s.name)}</h4>
               </div>
-              <p class="text-xs text-slate-600 font-semibold mt-0.5">👨 S/o ${escapeHtml(s.fatherName)}</p>
-              <div class="flex items-center gap-2 mt-1 text-[11px] text-slate-500">
+              <div class="mt-1">
+                <span class="father-name-badge-3d">
+                  👨‍👦 S/o ${escapeHtml(s.fatherName)}
+                </span>
+              </div>
+              <div class="flex items-center gap-2 mt-1.5 text-[11px] text-slate-500 font-medium">
                 <span>📞 ${escapeHtml(s.contactNo || 'No phone')}</span>
                 <span>•</span>
-                <span class="text-emerald-700 font-bold">${rate}% attendance</span>
+                <span class="text-emerald-700 font-black">${rate}% Rate</span>
               </div>
             </div>
           </div>
 
-          <div class="flex items-center gap-1.5">
-            <button class="btn-view-student-log p-2.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-sm" data-roll="${s.rollNo}" title="View Individual History">
-              <i data-lucide="calendar-search" class="w-4 h-4"></i>
+          <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+            <button class="btn-view-student-log flex-1 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center gap-1.5 transition" data-roll="${s.rollNo}">
+              <i data-lucide="calendar-search" class="w-3.5 h-3.5"></i> View History
             </button>
-            <button class="btn-delete-candidate p-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 shadow-sm" data-roll="${s.rollNo}" title="Delete Student">
+            <button class="btn-delete-candidate p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition" data-roll="${s.rollNo}" title="Delete Student">
               <i data-lucide="trash" class="w-4 h-4"></i>
             </button>
           </div>
@@ -685,8 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
         const roll = el.getAttribute('data-roll');
         selectedStudentRollNo = roll;
-        // Switch to Student History Tab
-        document.querySelector('.dock-item[data-tab="tab-student-history"]').click();
+        switchTab('tab-student-history');
       });
     });
 
@@ -707,7 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Dedicated Individual Student History View Engine
   // ----------------------------------------------------
   function renderStudentHistoryDropdown() {
-    const students = window.attendanceStore.getStudents();
+    const students = window.attendanceStore.getStudents() || [];
     if (students.length === 0) {
       historyStudentSelect.innerHTML = `<option value="">No students registered</option>`;
       return;
@@ -719,7 +604,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     historyStudentSelect.innerHTML = students.map(s => `
       <option value="${s.rollNo}" ${String(s.rollNo) === String(selectedStudentRollNo) ? 'selected' : ''}>
-        Roll ${s.rollNo}: ${s.name} (S/o ${s.fatherName}) - ${s.courseName}
+        Roll ${s.rollNo}: ${s.name} (S/o ${s.fatherName})
       </option>
     `).join('');
   }
@@ -732,72 +617,81 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Clean Phone number for WhatsApp & Call
     const rawPhone = student.contactNo.replace(/[^0-9]/g, '');
 
-    // 1. Header Card
+    // Profile Card
     historyStudentCard.innerHTML = `
-      <div class="flex items-center gap-3.5">
+      <div class="flex items-center gap-3.5 mb-3">
         <div class="w-16 h-16 rounded-2xl bg-white border-2 border-indigo-200 overflow-hidden shrink-0 shadow-sm flex items-center justify-center text-3xl">
           ${renderAvatar(student)}
         </div>
-        <div class="flex-1 min-w-0">
+        <div>
           <div class="flex items-center gap-2">
-            <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-600 text-white font-mono font-bold">Roll: ${student.rollNo}</span>
-            <h3 class="text-base font-extrabold text-slate-900 truncate">${escapeHtml(student.name)}</h3>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-600 text-white font-mono font-black">Roll ${student.rollNo}</span>
+            <h3 class="text-base font-black text-slate-900">${escapeHtml(student.name)}</h3>
           </div>
-          <p class="text-xs font-bold text-slate-700 mt-0.5">👨 Father: ${escapeHtml(student.fatherName)}</p>
-          <p class="text-[11px] text-slate-500 truncate">${escapeHtml(student.courseName)} • ${escapeHtml(student.batchTime.split('(')[0])}</p>
+          <div class="mt-1">
+            <span class="father-name-badge-3d">
+              👨‍👦 Father: ${escapeHtml(student.fatherName)}
+            </span>
+          </div>
+          <p class="text-xs text-indigo-700 font-bold mt-1">${escapeHtml(student.courseName)}</p>
         </div>
       </div>
 
-      <!-- Quick Action Buttons: Call & WhatsApp Parent -->
-      <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-indigo-100">
-        <a href="tel:${student.contactNo}" class="py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm">
+      <div class="space-y-1.5 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200 mb-3">
+        <div><span class="font-bold text-slate-500">Batch:</span> ${escapeHtml(student.batchTime)}</div>
+        <div><span class="font-bold text-slate-500">Phone:</span> ${escapeHtml(student.contactNo || 'N/A')}</div>
+        <div><span class="font-bold text-slate-500">Address:</span> ${escapeHtml(student.address || 'N/A')}</div>
+      </div>
+
+      <!-- Quick Parent Communication -->
+      <div class="grid grid-cols-2 gap-2">
+        <a href="tel:${student.contactNo}" class="py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition">
           <i data-lucide="phone-call" class="w-3.5 h-3.5 text-emerald-600"></i> Call Parent
         </a>
-        <a href="https://wa.me/${rawPhone}?text=Hello%2C%20Attendance%20Report%20for%20${encodeURIComponent(student.name)}%20(Roll%20${student.rollNo})" target="_blank" class="py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm">
-          <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> WhatsApp Parent
+        <a href="https://wa.me/${rawPhone}?text=Hello%2C%20Attendance%20Report%20for%20${encodeURIComponent(student.name)}%20(Roll%20${student.rollNo})" target="_blank" class="py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition">
+          <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> WhatsApp
         </a>
       </div>
     `;
 
-    // 2. Timeline Breakdown (Weekly vs Monthly)
+    // History Content
     if (historyViewMode === 'weekly') {
       const weekly = window.attendanceStore.getStudentHistoryWeekly(student.rollNo, currentDate);
       
       individualHistoryContent.innerHTML = `
-        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-          <div class="flex items-center justify-between mb-3">
+        <div class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-slate-700">Week: ${weekly.weekRange}</span>
-            <span class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">${weekly.rate}% Rate</span>
+            <span class="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">${weekly.rate}% Rate</span>
           </div>
 
-          <div class="grid grid-cols-4 gap-2 text-center mb-4">
+          <div class="grid grid-cols-4 gap-2 text-center">
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
-              <span class="block text-indigo-700 font-extrabold text-sm">${weekly.totalClasses}</span>
+              <span class="block text-indigo-700 font-black text-base">${weekly.totalClasses}</span>
               <span class="text-[9px] text-slate-500 uppercase font-bold">Classes</span>
             </div>
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
-              <span class="block text-emerald-600 font-extrabold text-sm">${weekly.present}</span>
+              <span class="block text-emerald-600 font-black text-base">${weekly.present}</span>
               <span class="text-[9px] text-slate-500 uppercase font-bold">Present</span>
             </div>
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
-              <span class="block text-rose-600 font-extrabold text-sm">${weekly.absent}</span>
+              <span class="block text-rose-600 font-black text-base">${weekly.absent}</span>
               <span class="text-[9px] text-slate-500 uppercase font-bold">Absent</span>
             </div>
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
-              <span class="block text-amber-600 font-extrabold text-sm">${weekly.leave}</span>
+              <span class="block text-amber-600 font-black text-base">${weekly.leave}</span>
               <span class="text-[9px] text-slate-500 uppercase font-bold">Leave</span>
             </div>
           </div>
 
-          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5">Weekly Day Log</h4>
-          <div class="space-y-2">
+          <h4 class="text-[10px] font-black uppercase tracking-wider text-slate-400 pt-1">Day-by-Day Status</h4>
+          <div class="space-y-1.5">
             ${weekly.logs.map(log => `
               <div class="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
                 <div class="flex items-center gap-2">
-                  <span class="w-10 font-bold text-slate-700">${log.dayName}</span>
+                  <span class="w-10 font-black text-slate-800">${log.dayName}</span>
                   <span class="text-slate-500 font-mono text-[11px]">${log.date}</span>
                 </div>
                 <div>
@@ -809,80 +703,68 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
     } else {
-      // Monthly View Matrix
-      const currentYearMonth = currentDate.substring(0, 7); // 'YYYY-MM'
+      const currentYearMonth = currentDate.substring(0, 7);
       const monthly = window.attendanceStore.getStudentHistoryMonthly(student.rollNo, currentYearMonth);
 
       individualHistoryContent.innerHTML = `
-        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-bold text-slate-900">Month: ${monthly.monthName}</span>
-            <span class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">${monthly.rate}% Attendance</span>
+        <div class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-900">${monthly.monthName}</span>
+            <span class="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">${monthly.rate}% Rate</span>
           </div>
 
-          <div class="grid grid-cols-4 gap-2 text-center mb-4">
+          <div class="grid grid-cols-4 gap-2 text-center">
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
-              <span class="block text-indigo-700 font-extrabold text-sm">${monthly.totalClasses}</span>
+              <span class="block text-indigo-700 font-black text-base">${monthly.totalClasses}</span>
               <span class="text-[9px] text-slate-500 uppercase font-bold">Held</span>
             </div>
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
-              <span class="block text-emerald-600 font-extrabold text-sm">${monthly.present}</span>
+              <span class="block text-emerald-600 font-black text-base">${monthly.present}</span>
               <span class="text-[9px] text-slate-500 uppercase font-bold">Present</span>
             </div>
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
-              <span class="block text-rose-600 font-extrabold text-sm">${monthly.absent}</span>
+              <span class="block text-rose-600 font-black text-base">${monthly.absent}</span>
               <span class="text-[9px] text-slate-500 uppercase font-bold">Absent</span>
             </div>
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
-              <span class="block text-amber-600 font-extrabold text-sm">${monthly.leave}</span>
+              <span class="block text-amber-600 font-black text-base">${monthly.leave}</span>
               <span class="text-[9px] text-slate-500 uppercase font-bold">Leave</span>
             </div>
           </div>
 
-          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Monthly Matrix (Day 1 - 31)</h4>
-          <div class="history-month-grid mb-4">
+          <h4 class="text-[10px] font-black uppercase tracking-wider text-slate-400 pt-1">Monthly 31-Day Matrix</h4>
+          <div class="grid grid-cols-7 gap-1.5 mb-2">
             ${monthly.logs.map(log => {
-              let cellClass = 'day-unmarked';
+              let bg = 'bg-slate-50 text-slate-400 border-slate-200';
               let char = '·';
-              if (log.status === 'present') { cellClass = 'day-present'; char = 'P'; }
-              else if (log.status === 'absent') { cellClass = 'day-absent'; char = 'A'; }
-              else if (log.status === 'leave') { cellClass = 'day-leave'; char = 'L'; }
+              if (log.status === 'present') { bg = 'bg-emerald-100 text-emerald-800 border-emerald-300 font-black'; char = 'P'; }
+              else if (log.status === 'absent') { bg = 'bg-rose-100 text-rose-800 border-rose-300 font-black'; char = 'A'; }
+              else if (log.status === 'leave') { bg = 'bg-amber-100 text-amber-800 border-amber-300 font-black'; char = 'L'; }
 
               return `
-                <div class="history-day-cell ${cellClass}" title="${log.date}: ${log.status.toUpperCase()}">
-                  <span class="text-[10px] leading-tight">${log.day}</span>
-                  <span class="text-[8px] font-black">${char}</span>
+                <div class="aspect-square rounded-lg border flex flex-col items-center justify-center p-1 ${bg}" title="${log.date}: ${log.status}">
+                  <span class="text-[10px] leading-none">${log.day}</span>
+                  <span class="text-[9px] font-black">${char}</span>
                 </div>
               `;
             }).join('')}
-          </div>
-
-          <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
-            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Present</span>
-            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> Absent</span>
-            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> Leave</span>
-            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block"></span> Unmarked</span>
           </div>
         </div>
       `;
     }
 
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide && lucide.createIcons) lucide.createIcons();
   }
 
   // ----------------------------------------------------
   // Date-wise Logs
   // ----------------------------------------------------
   function renderHistory() {
-    historySummaryDate.textContent = formatDateHuman(historyDate);
     const stats = window.attendanceStore.getStatsForDate(historyDate);
     const attendanceMap = window.attendanceStore.getAttendanceForDate(historyDate);
-    const students = window.attendanceStore.getStudents();
+    const students = window.attendanceStore.getStudents() || [];
 
-    histPresent.textContent = stats.present;
-    histAbsent.textContent = stats.absent;
-    histLeave.textContent = stats.leave;
-    historySummaryRate.textContent = `${stats.rate}% Rate`;
+    historySummaryRate.textContent = `${stats.rate}% Rate (${stats.present} Present / ${stats.absent} Absent)`;
 
     const records = students.map(s => {
       return {
@@ -896,7 +778,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (records.length === 0) {
       historyRecordsList.innerHTML = `
-        <div class="text-center py-8 text-slate-400 text-xs bg-white border border-slate-200 rounded-2xl shadow-sm">
+        <div class="text-center py-8 text-slate-400 text-xs bg-white border border-slate-200 rounded-2xl">
           No records matching selected status for this date.
         </div>
       `;
@@ -904,14 +786,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     historyRecordsList.innerHTML = records.map(r => `
-      <div class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-2xl shadow-sm">
+      <div class="student-card-3d flex items-center justify-between p-3">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-base overflow-hidden shrink-0 shadow-sm">
+          <div class="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-base overflow-hidden shrink-0 shadow-sm">
             ${renderAvatar(r)}
           </div>
           <div>
-            <p class="text-xs font-bold text-slate-900">Roll ${r.rollNo}: ${escapeHtml(r.name)} <span class="text-[10px] text-slate-500 font-normal">(S/o ${escapeHtml(r.fatherName)})</span></p>
-            <p class="text-[11px] text-slate-500">${escapeHtml(r.courseName)} • ${escapeHtml(r.batchTime.split('(')[0])}</p>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-800">Roll ${r.rollNo}</span>
+              <p class="text-xs font-black text-slate-900">${escapeHtml(r.name)}</p>
+            </div>
+            <div class="mt-0.5">
+              <span class="father-name-badge-3d text-[10px] py-0.5">
+                👨‍👦 S/o ${escapeHtml(r.fatherName)}
+              </span>
+            </div>
           </div>
         </div>
         <div>
@@ -922,7 +811,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----------------------------------------------------
-  // Student Detail Profile Modal
+  // Candidate Detail Profile Modal
   // ----------------------------------------------------
   function openCandidateDetailModal(rollNo) {
     const student = window.attendanceStore.getStudentByRollNo(rollNo);
@@ -936,59 +825,51 @@ document.addEventListener('DOMContentLoaded', () => {
     const rate = totalDays > 0 ? Math.round((presentCount / totalDays) * 100) : 100;
 
     candidateProfileContent.innerHTML = `
-      <div class="text-center pb-3 border-b border-slate-200">
-        <div class="w-20 h-20 rounded-3xl bg-indigo-50 border-2 border-indigo-200 flex items-center justify-center text-3xl mx-auto mb-2 shadow-md overflow-hidden">
+      <div class="text-center pb-3 border-b border-slate-100">
+        <div class="w-18 h-18 rounded-2xl bg-indigo-50 border-2 border-indigo-200 flex items-center justify-center text-3xl mx-auto mb-2 shadow-md overflow-hidden">
           ${renderAvatar(student)}
         </div>
-        <h3 class="text-lg font-extrabold text-slate-900">${escapeHtml(student.name)}</h3>
-        <p class="text-xs font-bold text-indigo-700">👨 Father's Name: ${escapeHtml(student.fatherName)}</p>
-        <span class="inline-block mt-1 text-[11px] px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 font-mono font-bold border border-slate-200">Roll No: ${student.rollNo}</span>
+        <h3 class="text-base font-black text-slate-900">${escapeHtml(student.name)}</h3>
+        <div class="mt-1">
+          <span class="father-name-badge-3d">
+            👨‍👦 Father: ${escapeHtml(student.fatherName)}
+          </span>
+        </div>
+        <span class="inline-block mt-1.5 text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 font-mono font-bold border border-slate-200">Roll No: ${student.rollNo}</span>
       </div>
 
-      <div class="grid grid-cols-4 gap-2 text-center my-3">
-        <div class="bg-slate-50 p-2 rounded-2xl border border-slate-200 shadow-sm">
-          <span class="block text-indigo-700 font-extrabold text-sm">${rate}%</span>
-          <span class="text-[9px] text-slate-500 uppercase font-bold">Rate</span>
+      <div class="grid grid-cols-4 gap-2 text-center my-2">
+        <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
+          <span class="block text-indigo-700 font-black text-sm">${rate}%</span>
+          <span class="text-[9px] text-slate-400 uppercase font-bold">Rate</span>
         </div>
-        <div class="bg-slate-50 p-2 rounded-2xl border border-slate-200 shadow-sm">
-          <span class="block text-emerald-600 font-extrabold text-sm">${presentCount}</span>
-          <span class="text-[9px] text-slate-500 uppercase font-bold">Present</span>
+        <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
+          <span class="block text-emerald-600 font-black text-sm">${presentCount}</span>
+          <span class="text-[9px] text-slate-400 uppercase font-bold">Present</span>
         </div>
-        <div class="bg-slate-50 p-2 rounded-2xl border border-slate-200 shadow-sm">
-          <span class="block text-rose-600 font-extrabold text-sm">${absentCount}</span>
-          <span class="text-[9px] text-slate-500 uppercase font-bold">Absent</span>
+        <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
+          <span class="block text-rose-600 font-black text-sm">${absentCount}</span>
+          <span class="text-[9px] text-slate-400 uppercase font-bold">Absent</span>
         </div>
-        <div class="bg-slate-50 p-2 rounded-2xl border border-slate-200 shadow-sm">
-          <span class="block text-amber-600 font-extrabold text-sm">${leaveCount}</span>
-          <span class="text-[9px] text-slate-500 uppercase font-bold">Leave</span>
+        <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
+          <span class="block text-amber-600 font-black text-sm">${leaveCount}</span>
+          <span class="text-[9px] text-slate-400 uppercase font-bold">Leave</span>
         </div>
       </div>
 
-      <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2 text-xs">
-        <div class="flex items-center justify-between text-slate-700">
-          <span class="text-slate-500 font-medium">Course:</span>
-          <span class="font-bold text-indigo-700">${escapeHtml(student.courseName)}</span>
-        </div>
-        <div class="flex items-center justify-between text-slate-700">
-          <span class="text-slate-500 font-medium">Batch:</span>
-          <span class="font-bold">${escapeHtml(student.batchTime)}</span>
-        </div>
-        <div class="flex items-center justify-between text-slate-700">
-          <span class="text-slate-500 font-medium">Contact No:</span>
-          <span>${escapeHtml(student.contactNo || 'Not provided')}</span>
-        </div>
-        <div class="flex items-center justify-between text-slate-700">
-          <span class="text-slate-500 font-medium">Address:</span>
-          <span>${escapeHtml(student.address || 'Not provided')}</span>
-        </div>
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1.5 text-xs">
+        <div><span class="text-slate-500 font-bold">Course:</span> <span class="font-bold text-indigo-700">${escapeHtml(student.courseName)}</span></div>
+        <div><span class="text-slate-500 font-bold">Batch:</span> <span class="font-bold">${escapeHtml(student.batchTime)}</span></div>
+        <div><span class="text-slate-500 font-bold">Phone:</span> ${escapeHtml(student.contactNo || 'N/A')}</div>
+        <div><span class="text-slate-500 font-bold">Address:</span> ${escapeHtml(student.address || 'N/A')}</div>
       </div>
 
       <div class="flex gap-2">
-        <button class="btn-profile-id-badge flex-1 py-2.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm">
-          <i data-lucide="qr-code" class="w-4 h-4"></i> ID Card
+        <button class="btn-profile-id-badge flex-1 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="qr-code" class="w-3.5 h-3.5"></i> Smart ID
         </button>
-        <button class="btn-profile-open-history flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm">
-          <i data-lucide="calendar" class="w-4 h-4"></i> View Log
+        <button class="btn-profile-open-history flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="calendar" class="w-3.5 h-3.5"></i> Full Log
         </button>
       </div>
     `;
@@ -1001,65 +882,63 @@ document.addEventListener('DOMContentLoaded', () => {
     candidateProfileContent.querySelector('.btn-profile-open-history').addEventListener('click', () => {
       modalCandidateDetail.classList.remove('open');
       selectedStudentRollNo = rollNo;
-      document.querySelector('.dock-item[data-tab="tab-student-history"]').click();
+      switchTab('tab-student-history');
     });
 
     modalCandidateDetail.classList.add('open');
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide && lucide.createIcons) lucide.createIcons();
   }
 
   // ----------------------------------------------------
-  // 3D Digital Candidate ID Badge Modal
+  // 3D ID Badge Modal
   // ----------------------------------------------------
   function open3DIdBadgeModal(rollNo) {
     const student = window.attendanceStore.getStudentByRollNo(rollNo);
     const settings = window.attendanceStore.getSettings();
     if (!student) return;
 
-    const qrData = encodeURIComponent(`STUDENT:${student.rollNo}:${student.name}:${student.fatherName}`);
+    const qrData = encodeURIComponent(`APEX:${student.rollNo}:${student.name}:${student.fatherName}`);
     const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${qrData}&color=1e1b4b`;
 
     const logoHtml = settings.orgLogoUrl ? 
-      `<img src="${settings.orgLogoUrl}" class="w-8 h-8 rounded-lg object-cover">` : 
+      `<img src="${settings.orgLogoUrl}" class="w-9 h-9 rounded-lg object-cover">` : 
       `<span class="text-2xl">${settings.orgLogo || '🎓'}</span>`;
 
     idBadgeContainer.innerHTML = `
-      <div id="printable-id-card" class="digital-id-badge">
-        <div class="id-badge-lanyard-hole"></div>
-        <div class="id-badge-hologram"></div>
-
-        <!-- Org Header -->
-        <div class="flex items-center gap-2.5 pb-3 border-b border-slate-200 mb-3.5">
-          <div class="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm shrink-0">
+      <div class="id-card-3d">
+        <div class="flex items-center gap-2.5 pb-2.5 border-b border-indigo-100 mb-3">
+          <div class="w-9 h-9 rounded-xl bg-white border border-indigo-200 flex items-center justify-center shadow-sm shrink-0">
             ${logoHtml}
           </div>
           <div>
-            <h4 class="text-xs font-black text-slate-900 uppercase tracking-tight">${escapeHtml(settings.orgName || 'Apex Coaching Institute')}</h4>
-            <p class="text-[9px] text-slate-500 font-semibold">${escapeHtml(settings.orgBranch || 'Campus HQ')} • Student ID</p>
+            <h4 class="text-xs font-black text-slate-900 uppercase">${escapeHtml(settings.orgName || 'Apex Coaching')}</h4>
+            <p class="text-[9px] text-slate-500 font-bold">${escapeHtml(settings.orgBranch || 'Campus HQ')} • Student Smart ID</p>
           </div>
         </div>
 
-        <!-- Student Photo & Details -->
-        <div class="flex items-center gap-4 mb-3.5">
-          <div class="w-20 h-20 rounded-2xl bg-white border-2 border-indigo-200 overflow-hidden shadow-md shrink-0 flex items-center justify-center text-3xl">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-16 h-16 rounded-xl bg-white border-2 border-indigo-200 overflow-hidden shadow-md shrink-0 flex items-center justify-center text-3xl">
             ${renderAvatar(student)}
           </div>
           <div class="flex-1 min-w-0">
-            <span class="text-[9px] font-mono font-black px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">Roll: ${student.rollNo}</span>
-            <h3 class="text-base font-extrabold text-slate-900 truncate mt-1">${escapeHtml(student.name)}</h3>
-            <p class="text-xs text-slate-700 font-bold truncate">👨 S/o ${escapeHtml(student.fatherName)}</p>
-            <p class="text-[11px] text-indigo-600 font-bold truncate">${escapeHtml(student.courseName)}</p>
+            <span class="text-[9px] font-mono font-black px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-800">Roll: ${student.rollNo}</span>
+            <h3 class="text-sm font-black text-slate-900 truncate mt-0.5">${escapeHtml(student.name)}</h3>
+            <div class="mt-0.5">
+              <span class="father-name-badge-3d text-[10px]">
+                👨‍👦 S/o ${escapeHtml(student.fatherName)}
+              </span>
+            </div>
+            <p class="text-[11px] text-indigo-600 font-bold truncate mt-1">${escapeHtml(student.courseName)}</p>
           </div>
         </div>
 
-        <!-- QR Code -->
-        <div class="flex items-center justify-between bg-white border border-slate-200 rounded-2xl p-3 shadow-inner">
+        <div class="flex items-center justify-between bg-white border border-slate-200 rounded-xl p-2.5">
           <div>
-            <span class="text-[9px] uppercase font-bold text-slate-400 block mb-0.5">Attendance QR Pass</span>
-            <p class="text-[10px] text-slate-700 font-mono font-bold">BATCH: ${escapeHtml(student.batchTime.split('(')[0])}</p>
-            <p class="text-[9px] text-emerald-600 font-bold mt-1">✓ ENROLLED 2026-2027</p>
+            <span class="text-[9px] uppercase font-bold text-slate-400 block">Attendance Pass</span>
+            <p class="text-[11px] text-slate-700 font-mono font-bold">${escapeHtml(student.batchTime.split('(')[0])}</p>
+            <p class="text-[9px] text-emerald-600 font-black mt-0.5">✓ 2026-2027 ACTIVE</p>
           </div>
-          <div class="w-16 h-16 rounded-xl bg-slate-50 border border-slate-200 p-1 flex items-center justify-center">
+          <div class="w-14 h-14 rounded-lg bg-slate-50 border border-slate-200 p-1 flex items-center justify-center">
             <img src="${qrImgUrl}" alt="QR" class="w-full h-full object-contain">
           </div>
         </div>
@@ -1067,7 +946,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     modalIdBadge.classList.add('open');
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide && lucide.createIcons) lucide.createIcons();
   }
 
   // ----------------------------------------------------
@@ -1165,73 +1044,37 @@ document.addEventListener('DOMContentLoaded', () => {
   // Event Bindings
   // ----------------------------------------------------
   function bindEvents() {
-    // Admin Login Form
-    formAdminLogin.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const user = loginUsername.value;
-      const pass = loginPassword.value;
+    // WhatsApp Sharing
+    const shareWhatsApp = (dateStr) => {
+      const text = window.attendanceStore.generateWhatsAppReport(dateStr);
+      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+    };
 
-      const res = window.attendanceStore.loginAdmin(user, pass);
-      if (res.success) {
-        loginErrorMsg.classList.add('hidden');
-        adminLockscreen.classList.add('hidden');
-        playTactileClick();
-        showToast('Welcome Administrator!', 'shield-check');
-      } else {
-        loginErrorMsg.textContent = res.error;
-        loginErrorMsg.classList.remove('hidden');
-        if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
-      }
+    btnShareWhatsappToday.addEventListener('click', () => shareWhatsApp(currentDate));
+    btnShareWhatsappReport.addEventListener('click', () => shareWhatsApp(historyDate));
+
+    // Cloud Sync Buttons
+    btnSaveCloudSync.addEventListener('click', () => {
+      const url = inputCloudUrl.value.trim();
+      window.attendanceStore.updateSettings({ cloudSyncUrl: url });
+      window.attendanceStore.dispatchCloudSync();
+      showToast('Cloud Sync Configured & Synced!', 'cloud');
     });
 
-    // Quick 1-Click Demo Login Bypass
-    const btnQuickBypassLogin = document.getElementById('btn-quick-bypass-login');
-    if (btnQuickBypassLogin) {
-      btnQuickBypassLogin.addEventListener('click', () => {
-        window.attendanceStore.loginAdmin('admin', 'admin123');
-        adminLockscreen.classList.add('hidden');
-        playTactileClick();
-        showToast('Dashboard Unlocked!', 'sparkles');
-      });
-    }
-
-    // Admin Logout
-    const handleLogout = () => {
-      if (confirm('Are you sure you want to log out as Admin?')) {
-        window.attendanceStore.logoutAdmin();
-        checkAdminAuth();
-        showToast('Logged out securely', 'log-out');
-      }
-    };
-    btnHeaderLogout.addEventListener('click', handleLogout);
-    btnAdminLogoutSettings.addEventListener('click', handleLogout);
-
-    // Update Admin Password
-    formUpdateAdminPass.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const cur = adminCurrentPass.value;
-      const neu = adminNewPass.value;
-
-      const res = window.attendanceStore.updateAdminPassword(cur, neu);
-      if (res.success) {
-        formUpdateAdminPass.reset();
-        showToast('Admin password updated!', 'key');
+    btnPullCloudData.addEventListener('click', async () => {
+      showToast('Pulling latest from Cloud...', 'refresh-cw');
+      const ok = await window.attendanceStore.pullFromCloud();
+      if (ok) {
+        showToast('Synced with Cloud successfully!', 'check-circle');
       } else {
-        alert(res.error);
+        showToast('Cloud sync offline or invalid URL', 'alert-triangle');
       }
     });
 
     // Date Navigation
     datePrevBtn.addEventListener('click', () => changeDate(-1));
     dateNextBtn.addEventListener('click', () => changeDate(1));
-    btnQuickToday.addEventListener('click', () => {
-      currentDate = getTodayDateStr();
-      dateInput.value = currentDate;
-      updateDateBadge();
-      renderAttendanceList();
-      renderStats();
-      showToast('Jumped to Today', 'calendar');
-    });
 
     dateInput.addEventListener('change', (e) => {
       currentDate = e.target.value || getTodayDateStr();
@@ -1249,7 +1092,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Mark All Present
     btnMarkAllPresent.addEventListener('click', () => {
-      playTactileClick();
       const filtered = getFilteredStudents();
       window.attendanceStore.markAllAttendance(currentDate, 'present', filtered);
       showToast('Filtered students marked Present!', 'check-check');
@@ -1261,24 +1103,24 @@ document.addEventListener('DOMContentLoaded', () => {
       renderCandidatesDirectory();
     });
 
-    // Dedicated Student History Select Change
+    // Student History Select Change
     historyStudentSelect.addEventListener('change', (e) => {
       selectedStudentRollNo = e.target.value;
       renderIndividualStudentHistory();
     });
 
-    // Weekly vs Monthly Toggle Buttons
+    // Weekly vs Monthly Toggle
     btnViewWeekly.addEventListener('click', () => {
       historyViewMode = 'weekly';
-      btnViewWeekly.className = 'flex-1 py-2 rounded-xl text-xs font-extrabold transition bg-white text-indigo-700 shadow-sm';
-      btnViewMonthly.className = 'flex-1 py-2 rounded-xl text-xs font-extrabold transition text-slate-600 hover:text-slate-900';
+      btnViewWeekly.className = 'flex-1 py-1.5 rounded-lg text-xs font-black transition bg-white text-indigo-700 shadow-sm';
+      btnViewMonthly.className = 'flex-1 py-1.5 rounded-lg text-xs font-black transition text-slate-600';
       renderIndividualStudentHistory();
     });
 
     btnViewMonthly.addEventListener('click', () => {
       historyViewMode = 'monthly';
-      btnViewMonthly.className = 'flex-1 py-2 rounded-xl text-xs font-extrabold transition bg-white text-indigo-700 shadow-sm';
-      btnViewWeekly.className = 'flex-1 py-2 rounded-xl text-xs font-extrabold transition text-slate-600 hover:text-slate-900';
+      btnViewMonthly.className = 'flex-1 py-1.5 rounded-lg text-xs font-black transition bg-white text-indigo-700 shadow-sm';
+      btnViewWeekly.className = 'flex-1 py-1.5 rounded-lg text-xs font-black transition text-slate-600';
       renderIndividualStudentHistory();
     });
 
@@ -1320,8 +1162,7 @@ document.addEventListener('DOMContentLoaded', () => {
       photoPreviewEmoji.classList.remove('hidden');
       btnRemovePhoto.classList.add('hidden');
 
-      // Auto-suggest next roll number
-      const students = window.attendanceStore.getStudents();
+      const students = window.attendanceStore.getStudents() || [];
       const maxRoll = students.reduce((max, s) => {
         const num = parseInt(s.rollNo, 10);
         return (!isNaN(num) && num > max) ? num : max;
@@ -1332,8 +1173,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     btnOpenAddCandidate.addEventListener('click', openAddCandidateModal);
-    btnNewCandidateAction.addEventListener('click', openAddCandidateModal);
-    fabAddCandidate.addEventListener('click', openAddCandidateModal);
 
     btnCloseCandidateModal.addEventListener('click', () => {
       modalAddCandidate.classList.remove('open');
@@ -1374,29 +1213,21 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       modalAddCandidate.classList.remove('open');
-      playTactileClick();
-      showToast(`Enrolled ${newStudent.name} (Roll: ${newStudent.rollNo})`, 'user-check');
+      showToast(`Enrolled ${newStudent.name} (S/o ${newStudent.fatherName})`, 'user-check');
     });
 
-    // Close Detail Modal
-    btnCloseDetailModal.addEventListener('click', () => {
-      modalCandidateDetail.classList.remove('open');
-    });
+    // Modal Closes
+    btnCloseDetailModal.addEventListener('click', () => modalCandidateDetail.classList.remove('open'));
     modalCandidateDetail.addEventListener('click', (e) => {
       if (e.target === modalCandidateDetail) modalCandidateDetail.classList.remove('open');
     });
 
-    // Close ID Badge Modal
-    btnCloseIdBadge.addEventListener('click', () => {
-      modalIdBadge.classList.remove('open');
-    });
+    btnCloseIdBadge.addEventListener('click', () => modalIdBadge.classList.remove('open'));
     modalIdBadge.addEventListener('click', (e) => {
       if (e.target === modalIdBadge) modalIdBadge.classList.remove('open');
     });
 
-    btnPrintIdCard.addEventListener('click', () => {
-      window.print();
-    });
+    btnPrintIdCard.addEventListener('click', () => window.print());
 
     // History Date Change
     historyDatePicker.addEventListener('change', (e) => {
@@ -1407,30 +1238,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // History Filters
     document.querySelectorAll('.hist-filter').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.hist-filter').forEach(b => {
-          b.classList.remove('active', 'bg-indigo-600', 'text-white');
-          b.classList.add('bg-white');
-        });
-        btn.classList.add('active', 'bg-indigo-600', 'text-white');
-        btn.classList.remove('bg-white');
+        document.querySelectorAll('.hist-filter').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
         historyStatusFilter = btn.getAttribute('data-status');
         renderHistory();
       });
     });
 
-    // Theme Swatch Selector
-    document.querySelectorAll('.theme-swatch').forEach(swatch => {
-      swatch.addEventListener('click', () => {
-        const theme = swatch.getAttribute('data-theme');
-        window.attendanceStore.updateSettings({ themeAccent: theme });
-        showToast(`Theme updated to ${theme.toUpperCase()}`, 'palette');
-      });
-    });
-
     // Save Branding
     btnSaveBranding.addEventListener('click', () => {
-      const name = settingOrgName.value || 'Apex Coaching Institute';
-      const branch = settingOrgBranch.value || 'Main Campus';
+      const name = settingOrgName.value || 'Apex Coaching';
+      const branch = settingOrgBranch.value || 'Attendance Portal';
 
       window.attendanceStore.updateSettings({
         orgName: name,
@@ -1446,10 +1264,7 @@ document.addEventListener('DOMContentLoaded', () => {
       modalAddDept.classList.add('open');
     });
 
-    btnCloseDeptModal.addEventListener('click', () => {
-      modalAddDept.classList.remove('open');
-    });
-
+    btnCloseDeptModal.addEventListener('click', () => modalAddDept.classList.remove('open'));
     modalAddDept.addEventListener('click', (e) => {
       if (e.target === modalAddDept) modalAddDept.classList.remove('open');
     });
@@ -1471,7 +1286,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Coaching_Attendance_Backup_${getTodayDateStr()}.json`;
+      link.download = `Apex_Attendance_Backup_${getTodayDateStr()}.json`;
       link.click();
       URL.revokeObjectURL(url);
       showToast('Full backup JSON downloaded', 'file-down');
@@ -1492,35 +1307,23 @@ document.addEventListener('DOMContentLoaded', () => {
       reader.readAsText(file);
     });
 
-    // Reset Data
-    const handleReset = () => {
+    // Reset Mock Data
+    resetDataBtn.addEventListener('click', () => {
       localStorage.clear();
       window.location.reload();
-    };
-    resetDataBtn.addEventListener('click', handleReset);
-
-    // Desktop Frame Toggle
-    toggleFrameBtn.addEventListener('click', () => {
-      deviceContainer.classList.toggle('fullscreen-mode');
-      toggleFrameBtn.classList.toggle('active');
     });
 
     // Export Excel / CSV
     btnExportExcel.addEventListener('click', () => {
       exportAttendanceCSV(historyDate);
     });
-
-    // Sync Sheets
-    btnSyncSheets.addEventListener('click', () => {
-      showToast('Google Sheets Sync ready for Step 3 API', 'cloud');
-    });
   }
 
   // ----------------------------------------------------
-  // CSV Export with Strict Coaching Fields
+  // CSV Export
   // ----------------------------------------------------
   function exportAttendanceCSV(dateStr) {
-    const students = window.attendanceStore.getStudents();
+    const students = window.attendanceStore.getStudents() || [];
     const attendanceMap = window.attendanceStore.getAttendanceForDate(dateStr);
 
     let csv = 'Roll No,Student Name,Father Name,Contact No,Address,Batch Time,Course Name,Date,Status\n';
@@ -1544,10 +1347,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function showToast(message, icon = 'info') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
-    toast.className = 'toast';
+    toast.className = 'toast-3d';
     toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 text-emerald-400"></i> <span>${escapeHtml(message)}</span>`;
     container.appendChild(toast);
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide && lucide.createIcons) lucide.createIcons();
 
     setTimeout(() => {
       toast.remove();
@@ -1562,9 +1365,5 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
-  }
-
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 });
