@@ -945,7 +945,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const rawPhone = student.contactNo.replace(/[^0-9]/g, '');
+    const rawPhone = (student.contactNo || '').replace(/[^0-9]/g, '');
 
     // Profile Card with DOB & Edit Option
     historyStudentCard.innerHTML = `
@@ -964,7 +964,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 👨‍👦 Father: ${escapeHtml(student.fatherName)}
               </span>
             </div>
-            <p class="text-xs text-indigo-700 font-bold mt-1">${escapeHtml(student.courseName)}</p>
+            <p class="text-xs text-indigo-700 font-bold mt-1">${escapeHtml(student.courseName || '')}</p>
           </div>
         </div>
 
@@ -975,14 +975,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       <div class="space-y-1.5 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200 mb-3">
         <div><span class="font-bold text-slate-500">Date of Birth:</span> ${student.dob ? formatDateHuman(student.dob) : 'Not specified'}</div>
-        <div><span class="font-bold text-slate-500">Batch:</span> ${escapeHtml(student.batchTime)}</div>
+        <div><span class="font-bold text-slate-500">Batch:</span> ${escapeHtml(student.batchTime || '')}</div>
         <div><span class="font-bold text-slate-500">Phone:</span> ${escapeHtml(student.contactNo || 'N/A')}</div>
         <div><span class="font-bold text-slate-500">Address:</span> ${escapeHtml(student.address || 'N/A')}</div>
       </div>
 
       <!-- Quick Actions -->
       <div class="grid grid-cols-2 gap-2">
-        <a href="tel:${student.contactNo}" class="py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition">
+        <a href="tel:${student.contactNo || ''}" class="py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition">
           <i data-lucide="phone-call" class="w-3.5 h-3.5 text-emerald-600"></i> Call Parent
         </a>
         <a href="https://wa.me/${rawPhone}?text=Hello%2C%20Attendance%20Report%20for%20${encodeURIComponent(student.name)}%20(Roll%20${student.rollNo})" target="_blank" class="py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition">
@@ -991,9 +991,12 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `;
 
-    historyStudentCard.querySelector('.btn-card-edit-student').addEventListener('click', () => {
-      openEditCandidateModal(student.rollNo);
-    });
+    const editBtn = historyStudentCard.querySelector('.btn-card-edit-student');
+    if (editBtn) {
+      editBtn.addEventListener('click', () => {
+        openEditCandidateModal(student.rollNo);
+      });
+    }
 
     // History Content
     if (historyViewMode === 'weekly') {
@@ -1637,23 +1640,27 @@ document.addEventListener('DOMContentLoaded', () => {
       modalManageBatch.classList.remove('open');
     });
 
-    // Inbuilt Cloud Buttons
-    btnCopyCloudKey.addEventListener('click', () => {
-      const key = displayCloudKey.textContent;
-      navigator.clipboard.writeText(key).then(() => {
-        showToast('Cloud Key copied to clipboard!', 'copy');
+    // Inbuilt Cloud Buttons (with null safety)
+    if (btnCopyCloudKey && displayCloudKey) {
+      btnCopyCloudKey.addEventListener('click', () => {
+        const key = displayCloudKey.textContent;
+        navigator.clipboard.writeText(key).then(() => {
+          showToast('Cloud Key copied to clipboard!', 'copy');
+        });
       });
-    });
+    }
 
-    btnConnectCloudKey.addEventListener('click', () => {
-      const customKey = inputCustomCloudKey.value.trim();
-      if (customKey) {
-        window.attendanceStore.updateSettings({ inbuiltCloudKey: customKey });
-        displayCloudKey.textContent = customKey;
-        inputCustomCloudKey.value = '';
-        showToast(`Connected to Cloud Key: ${customKey}`, 'cloud');
-      }
-    });
+    if (btnConnectCloudKey && inputCustomCloudKey) {
+      btnConnectCloudKey.addEventListener('click', () => {
+        const customKey = inputCustomCloudKey.value.trim();
+        if (customKey) {
+          window.attendanceStore.updateSettings({ inbuiltCloudKey: customKey });
+          if (displayCloudKey) displayCloudKey.textContent = customKey;
+          inputCustomCloudKey.value = '';
+          showToast(`Connected to Cloud Key: ${customKey}`, 'cloud');
+        }
+      });
+    }
 
     // Holiday Form Submit
     formAddHoliday.addEventListener('submit', (e) => {
