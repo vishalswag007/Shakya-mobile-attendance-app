@@ -1,7 +1,7 @@
 /**
- * Apex Coaching Institute - Data Store Engine
- * Features: Admin Authentication, Real-Time OTP Password Recovery via Email,
- * Student DOB, Student Edit & Admission, Batch Timings Manager, Holiday Calendar, Inbuilt Cloud Sync.
+ * Apex / Shakya Coaching Institute - Data Store Engine with Google Firebase Firestore
+ * Features: Real-time Multi-Device Cloud Sync, Offline-first Fallback, Admin Authentication,
+ * Email OTP Recovery, Candidate DOB, Batch Manager, Holiday Calendar.
  */
 
 const STORAGE_KEYS = {
@@ -10,7 +10,18 @@ const STORAGE_KEYS = {
   SETTINGS: 'apex_settings',
   HOLIDAYS: 'apex_holidays',
   ADMIN_SESSION: 'apex_admin_session',
-  PASSWORD_RESET_OTP: 'apex_pwd_reset_otp'
+  PASSWORD_RESET_OTP: 'apex_pwd_reset_otp',
+  LAST_CLOUD_SYNC: 'apex_last_cloud_sync'
+};
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAGYXGuytbiEs-vjCzrCA1jZQyM2R7PxMw",
+  authDomain: "shakya-attendance.firebaseapp.com",
+  projectId: "shakya-attendance",
+  storageBucket: "shakya-attendance.firebasestorage.app",
+  messagingSenderId: "574539374438",
+  appId: "1:574539374438:web:e00d262a2a6ba4aa9732a7",
+  measurementId: "G-VN4F7RNWQM"
 };
 
 const DEFAULT_COURSES = [
@@ -37,7 +48,7 @@ const DEFAULT_HOLIDAYS = [
 ];
 
 const DEFAULT_SETTINGS = {
-  orgName: 'Apex Coaching Institute',
+  orgName: 'Shakya Coaching Institute',
   orgBranch: 'Main Academic Campus',
   orgLogo: '🎓',
   orgLogoUrl: null,
@@ -45,7 +56,7 @@ const DEFAULT_SETTINGS = {
   courses: DEFAULT_COURSES,
   batchTimings: DEFAULT_BATCH_TIMINGS,
   autoSundaysHoliday: true,
-  inbuiltCloudKey: 'APEX-COACHING-2026',
+  inbuiltCloudKey: 'SHAKYA-ACADEMY-2026',
   adminPassword: 'admin',
   adminRecoveryEmail: 'director@apexcoaching.com',
   requireLoginOnStart: true
@@ -153,8 +164,12 @@ const INITIAL_STUDENTS = [
 class AttendanceStore {
   constructor() {
     this.listeners = [];
+    this.firestoreDb = null;
+    this.cloudConnected = false;
+    this.isSyncing = false;
+    
     this.init();
-    this.startInbuiltCloudSync();
+    this.initFirebase();
   }
 
   init() {
@@ -183,6 +198,98 @@ class AttendanceStore {
     }
   }
 
+  // ----------------------------------------------------
+  // Google Firebase Firestore Real-Time Integration
+  // ----------------------------------------------------
+  initFirebase() {
+    if (typeof firebase !== 'undefined' && firebase.initializeApp) {
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp(FIREBASE_CONFIG);
+        }
+        this.firestoreDb = firebase.firestore();
+        this.cloudConnected = true;
+        console.log('⚡ Firebase Cloud Firestore Initialized Successfully!');
+        
+        this.listenToFirestoreRealtime();
+      } catch (err) {
+        console.warn('Firebase init notice:', err);
+      }
+    } else {
+      console.log('Firebase SDK running in local storage fallback mode.');
+    }
+  }
+
+  listenToFirestoreRealtime() {
+    if (!this.firestoreDb) return;
+
+    try {
+      const docRef = this.firestoreDb.collection('institutes').doc('shakya_attendance_data');
+
+      // Real-time snapshot listener: any phone update reflects instantly on all devices
+      docRef.onSnapshot((doc) => {
+        if (doc.exists) {
+          const cloudData = doc.data();
+          if (cloudData && !this.isSyncing) {
+            if (cloudData.students && Array.isArray(cloudData.students)) {
+              localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(cloudData.students));
+            }
+            if (cloudData.attendance && typeof cloudData.attendance === 'object') {
+              localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(cloudData.attendance));
+            }
+            if (cloudData.holidays && Array.isArray(cloudData.holidays)) {
+              localStorage.setItem(STORAGE_KEYS.HOLIDAYS, JSON.stringify(cloudData.holidays));
+            }
+            if (cloudData.settings && typeof cloudData.settings === 'object') {
+              const currentSettings = this.getSettings();
+              localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify({
+                ...currentSettings,
+                ...cloudData.settings,
+                // keep local admin password safe
+                adminPassword: currentSettings.adminPassword
+              }));
+            }
+
+            localStorage.setItem(STORAGE_KEYS.LAST_CLOUD_SYNC, new Date().toISOString());
+            this.listeners.forEach(fn => fn());
+          }
+        } else {
+          // If first time, seed Firestore with initial data
+          this.pushToFirestore();
+        }
+      }, (error) => {
+        console.warn('Firestore real-time sync notice (Please ensure Firestore is created in test mode):', error);
+      });
+    } catch (e) {
+      console.warn('Firestore listener setup exception:', e);
+    }
+  }
+
+  async pushToFirestore() {
+    if (!this.firestoreDb) return;
+
+    try {
+      this.isSyncing = true;
+      const payload = {
+        settings: this.getSettings(),
+        students: this.getStudents(),
+        attendance: this.getAllAttendanceRecords(),
+        holidays: this.getHolidays(),
+        updatedAt: new Date().toISOString(),
+        cloudKey: 'SHAKYA-ACADEMY-2026'
+      };
+
+      await this.firestoreDb.collection('institutes').doc('shakya_attendance_data').set(payload, { merge: true });
+      localStorage.setItem(STORAGE_KEYS.LAST_CLOUD_SYNC, new Date().toISOString());
+    } catch (err) {
+      console.warn('Firestore push notice:', err);
+    } finally {
+      setTimeout(() => {
+        this.isSyncing = false;
+      }, 500);
+    }
+  }
+
   subscribe(listener) {
     this.listeners.push(listener);
     return () => {
@@ -192,7 +299,7 @@ class AttendanceStore {
 
   notify() {
     this.listeners.forEach(fn => fn());
-    this.dispatchInbuiltCloudSync();
+    this.pushToFirestore();
   }
 
   // ----------------------------------------------------
@@ -303,13 +410,8 @@ class AttendanceStore {
       return { success: false, error: 'New password must be at least 3 characters long.' };
     }
 
-    // Update password
     this.updateSettings({ adminPassword: newPassword.trim() });
-    
-    // Clear OTP
     sessionStorage.removeItem(STORAGE_KEYS.PASSWORD_RESET_OTP);
-    
-    // Automatically log in admin
     sessionStorage.setItem(STORAGE_KEYS.ADMIN_SESSION, 'true');
     this.notify();
 
@@ -328,7 +430,7 @@ class AttendanceStore {
         courses: Array.isArray(s?.courses) && s.courses.length > 0 ? s.courses : DEFAULT_COURSES,
         batchTimings: Array.isArray(s?.batchTimings) && s.batchTimings.length > 0 ? s.batchTimings : DEFAULT_BATCH_TIMINGS,
         autoSundaysHoliday: s?.autoSundaysHoliday !== undefined ? !!s.autoSundaysHoliday : true,
-        inbuiltCloudKey: s?.inbuiltCloudKey || 'APEX-COACHING-2026',
+        inbuiltCloudKey: s?.inbuiltCloudKey || 'SHAKYA-ACADEMY-2026',
         adminPassword: s?.adminPassword || 'admin',
         adminRecoveryEmail: s?.adminRecoveryEmail || 'director@apexcoaching.com'
       };
@@ -827,39 +929,8 @@ class AttendanceStore {
       msg += leaveList.join('\n') + '\n';
     }
 
-    msg += `\n_Generated via Apex Attendance System_`;
+    msg += `\n_Generated via Shakya Attendance System_`;
     return msg;
-  }
-
-  // ----------------------------------------------------
-  // Inbuilt Zero-Setup Clouding Engine
-  // ----------------------------------------------------
-  async dispatchInbuiltCloudSync() {
-    const settings = this.getSettings();
-    const cloudKey = settings.inbuiltCloudKey || 'APEX-COACHING-2026';
-
-    try {
-      const payload = {
-        key: cloudKey,
-        settings,
-        students: this.getStudents(),
-        attendance: this.getAllAttendanceRecords(),
-        holidays: this.getHolidays(),
-        updatedAt: new Date().toISOString()
-      };
-
-      localStorage.setItem('apex_cloud_live_broadcast', JSON.stringify({ key: cloudKey, timestamp: Date.now() }));
-    } catch (err) {
-      console.warn('Inbuilt cloud sync notice:', err);
-    }
-  }
-
-  startInbuiltCloudSync() {
-    window.addEventListener('storage', (e) => {
-      if (e.key === 'apex_cloud_live_broadcast') {
-        this.listeners.forEach(fn => fn());
-      }
-    });
   }
 
   // ----------------------------------------------------
@@ -867,7 +938,7 @@ class AttendanceStore {
   // ----------------------------------------------------
   exportFullDataJSON() {
     return JSON.stringify({
-      version: '3.4-apex-otp-recovery',
+      version: '4.0-firebase-cloud',
       exportedAt: new Date().toISOString(),
       settings: this.getSettings(),
       students: this.getStudents(),
@@ -878,7 +949,7 @@ class AttendanceStore {
 
   importFullDataJSON(jsonStr) {
     try {
-      const data = JSON.parse(jsonStr);
+      const data = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
       if (data.students && Array.isArray(data.students)) {
         localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(data.students));
       }
