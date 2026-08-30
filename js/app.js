@@ -1951,6 +1951,48 @@ document.addEventListener('DOMContentLoaded', () => {
       reader.readAsText(file);
     });
 
+    // Directory Add Student Button
+    const btnDirectoryAddStudent = document.getElementById('btn-directory-add-student');
+    if (btnDirectoryAddStudent) {
+      btnDirectoryAddStudent.addEventListener('click', openAddCandidateModal);
+    }
+
+    // Danger Zone: Clear Attendance Only
+    const btnClearAttendanceLogs = document.getElementById('btn-clear-attendance-logs');
+    if (btnClearAttendanceLogs) {
+      btnClearAttendanceLogs.addEventListener('click', () => {
+        if (confirm('⚠️ Are you sure you want to clear ALL past attendance history? Enrolled students will NOT be deleted.')) {
+          window.attendanceStore.clearAllAttendanceHistory();
+          showToast('All attendance history cleared', 'calendar-x');
+        }
+      });
+    }
+
+    // Danger Zone: Delete All Students
+    const btnDeleteAllStudents = document.getElementById('btn-delete-all-students');
+    if (btnDeleteAllStudents) {
+      btnDeleteAllStudents.addEventListener('click', () => {
+        if (confirm('🚨 DANGER: Are you sure you want to delete ALL students and their attendance records? This action cannot be undone.')) {
+          window.attendanceStore.deleteAllStudents();
+          showToast('All students deleted', 'trash-2');
+        }
+      });
+    }
+
+    // Danger Zone: Factory Reset
+    const btnFactoryReset = document.getElementById('btn-factory-reset');
+    if (btnFactoryReset) {
+      btnFactoryReset.addEventListener('click', () => {
+        const confirmText = prompt('Type RESET to confirm complete factory reset:');
+        if (confirmText === 'RESET') {
+          window.attendanceStore.resetAllDataToDefault();
+          showToast('Application reset to factory defaults', 'rotate-ccw');
+        } else if (confirmText !== null) {
+          showToast('Factory reset cancelled', 'info');
+        }
+      });
+    }
+
     // Export Excel / CSV with DOB
     btnExportExcel.addEventListener('click', () => {
       exportAttendanceCSV(historyDate);

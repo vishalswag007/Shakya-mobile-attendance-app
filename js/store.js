@@ -1,6 +1,7 @@
 /**
  * Shakya Coaching Institute - Data Store Engine with Google Firebase Realtime Database
- * Real-time Auto-Sync across all phones, offline fallback, Admin Authentication, Email OTP Recovery.
+ * Features: Multi-Device Auto-Sync with Array Normalization, Admin Authentication,
+ * Email OTP Recovery, Clear All Data / Reset Option, Full Backup & Restore.
  */
 
 const STORAGE_KEYS = {
@@ -163,12 +164,19 @@ const INITIAL_STUDENTS = [
   }
 ];
 
+function normalizeArray(data) {
+  if (!data) return [];
+  if (Array.isArray(data)) return data.filter(Boolean);
+  if (typeof data === 'object') return Object.values(data).filter(Boolean);
+  return [];
+}
+
 class AttendanceStore {
   constructor() {
     this.listeners = [];
     this.firebaseDb = null;
     this.isSyncing = false;
-    this.cloudConnected = false;
+    this.pushTimeout = null;
 
     this.init();
     this.initFirebase();
@@ -204,22 +212,19 @@ class AttendanceStore {
   // Firebase Realtime Database Auto-Sync Engine
   // ----------------------------------------------------
   initFirebase() {
-    // 1. If Firebase SDK is loaded
     if (typeof firebase !== 'undefined' && firebase.initializeApp) {
       try {
         if (!firebase.apps.length) {
           firebase.initializeApp(FIREBASE_CONFIG);
         }
         this.firebaseDb = firebase.database();
-        this.cloudConnected = true;
         console.log('⚡ Firebase Realtime Database Initialized!');
         this.listenToFirebaseRealtime();
       } catch (err) {
-        console.warn('Firebase SDK init warning, switching to REST sync:', err);
+        console.warn('Firebase SDK init notice:', err);
         this.startRestPollingSync();
       }
     } else {
-      // 2. Direct High-Speed REST API Sync fallback
       this.startRestPollingSync();
     }
   }
@@ -234,45 +239,44 @@ class AttendanceStore {
         if (cloudData && !this.isSyncing) {
           this.applyCloudPayload(cloudData);
         } else if (!cloudData) {
-          // If remote is empty, seed initial data to cloud
           this.pushToCloud();
         }
       }, (error) => {
-        console.warn('Firebase Realtime Database Permission/Rule Notice:', error);
-        // Fallback to REST fetch
+        console.warn('Firebase Realtime Database Notice:', error);
         this.fetchFromCloudRest();
       });
     } catch (e) {
-      console.warn('Realtime listener error:', e);
+      console.warn('Realtime listener notice:', e);
       this.fetchFromCloudRest();
     }
   }
 
-  async pushToCloud() {
-    const payload = {
-      settings: this.getSettings(),
-      students: this.getStudents(),
-      attendance: this.getAllAttendanceRecords(),
-      holidays: this.getHolidays(),
-      updatedAt: new Date().toISOString()
-    };
+  pushToCloud() {
+    if (this.pushTimeout) clearTimeout(this.pushTimeout);
 
-    // 1. Try Firebase SDK
-    if (this.firebaseDb) {
-      try {
-        this.isSyncing = true;
-        await this.firebaseDb.ref('shakya_attendance').set(payload);
-        localStorage.setItem(STORAGE_KEYS.LAST_CLOUD_SYNC, new Date().toISOString());
-      } catch (err) {
-        // Fallback to REST PUT
+    this.pushTimeout = setTimeout(async () => {
+      const payload = {
+        settings: this.getSettings(),
+        students: this.getStudents(),
+        attendance: this.getAllAttendanceRecords(),
+        holidays: this.getHolidays(),
+        updatedAt: new Date().toISOString()
+      };
+
+      if (this.firebaseDb) {
+        try {
+          this.isSyncing = true;
+          await this.firebaseDb.ref('shakya_attendance').set(payload);
+          localStorage.setItem(STORAGE_KEYS.LAST_CLOUD_SYNC, new Date().toISOString());
+        } catch (err) {
+          this.pushToCloudRest(payload);
+        } finally {
+          setTimeout(() => { this.isSyncing = false; }, 500);
+        }
+      } else {
         this.pushToCloudRest(payload);
-      } finally {
-        setTimeout(() => { this.isSyncing = false; }, 400);
       }
-    } else {
-      // 2. Direct REST PUT
-      this.pushToCloudRest(payload);
-    }
+    }, 200);
   }
 
   async pushToCloudRest(payload) {
@@ -287,7 +291,7 @@ class AttendanceStore {
     } catch (e) {
       console.warn('REST push notice:', e);
     } finally {
-      setTimeout(() => { this.isSyncing = false; }, 400);
+      setTimeout(() => { this.isSyncing = false; }, 500);
     }
   }
 
@@ -306,10 +310,7 @@ class AttendanceStore {
   }
 
   startRestPollingSync() {
-    // Initial fetch from cloud
     this.fetchFromCloudRest();
-
-    // Check for updates every 15 seconds across devices
     setInterval(() => {
       if (!this.isSyncing) {
         this.fetchFromCloudRest();
@@ -320,24 +321,33 @@ class AttendanceStore {
   applyCloudPayload(cloudData) {
     let changed = false;
 
-    if (cloudData.students && Array.isArray(cloudData.students)) {
-      localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(cloudData.students));
-      changed = true;
+    if (cloudData.students) {
+      const list = normalizeArray(cloudData.students);
+      if (list.length > 0) {
+        localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(list));
+        changed = true;
+      }
     }
+
     if (cloudData.attendance && typeof cloudData.attendance === 'object') {
       localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(cloudData.attendance));
       changed = true;
     }
-    if (cloudData.holidays && Array.isArray(cloudData.holidays)) {
-      localStorage.setItem(STORAGE_KEYS.HOLIDAYS, JSON.stringify(cloudData.holidays));
-      changed = true;
+
+    if (cloudData.holidays) {
+      const holidaysList = normalizeArray(cloudData.holidays);
+      if (holidaysList.length > 0) {
+        localStorage.setItem(STORAGE_KEYS.HOLIDAYS, JSON.stringify(holidaysList));
+        changed = true;
+      }
     }
+
     if (cloudData.settings && typeof cloudData.settings === 'object') {
       const current = this.getSettings();
       localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify({
         ...current,
         ...cloudData.settings,
-        adminPassword: current.adminPassword // preserve local admin password
+        adminPassword: current.adminPassword
       }));
       changed = true;
     }
@@ -415,7 +425,7 @@ class AttendanceStore {
 
   generatePasswordResetOTP() {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes validity
+    const expiresAt = Date.now() + 5 * 60 * 1000;
     const recoveryEmail = this.getRecoveryEmail();
 
     const otpPayload = {
@@ -485,8 +495,8 @@ class AttendanceStore {
       return {
         ...DEFAULT_SETTINGS,
         ...s,
-        courses: Array.isArray(s?.courses) && s.courses.length > 0 ? s.courses : DEFAULT_COURSES,
-        batchTimings: Array.isArray(s?.batchTimings) && s.batchTimings.length > 0 ? s.batchTimings : DEFAULT_BATCH_TIMINGS,
+        courses: normalizeArray(s?.courses).length > 0 ? normalizeArray(s.courses) : DEFAULT_COURSES,
+        batchTimings: normalizeArray(s?.batchTimings).length > 0 ? normalizeArray(s.batchTimings) : DEFAULT_BATCH_TIMINGS,
         autoSundaysHoliday: s?.autoSundaysHoliday !== undefined ? !!s.autoSundaysHoliday : true,
         inbuiltCloudKey: s?.inbuiltCloudKey || 'SHAKYA-ACADEMY-2026',
         adminPassword: s?.adminPassword || 'admin',
@@ -533,7 +543,7 @@ class AttendanceStore {
   }
 
   // ----------------------------------------------------
-  // Batch Timings Management (Add, Edit, Delete)
+  // Batch Timings Management
   // ----------------------------------------------------
   getBatchTimings() {
     const settings = this.getSettings();
@@ -585,7 +595,8 @@ class AttendanceStore {
   getHolidays() {
     try {
       const h = JSON.parse(localStorage.getItem(STORAGE_KEYS.HOLIDAYS));
-      return Array.isArray(h) ? h : DEFAULT_HOLIDAYS;
+      const list = normalizeArray(h);
+      return list.length > 0 ? list : DEFAULT_HOLIDAYS;
     } catch {
       return DEFAULT_HOLIDAYS;
     }
@@ -640,11 +651,11 @@ class AttendanceStore {
   getStudents() {
     try {
       const data = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS));
-      if (!Array.isArray(data) || data.length === 0) {
-        localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(INITIAL_STUDENTS));
-        return INITIAL_STUDENTS;
+      const list = normalizeArray(data);
+      if (list.length === 0) {
+        return [];
       }
-      return data.map(s => ({
+      return list.map(s => ({
         id: s.id || s.rollNo || String(Date.now()),
         rollNo: s.rollNo || s.id || '101',
         name: s.name || 'Student',
@@ -710,7 +721,6 @@ class AttendanceStore {
 
     const newRollNo = updatedData.rollNo ? String(updatedData.rollNo).trim() : String(originalRollNo);
 
-    // If Roll No changed, migrate attendance history
     if (String(originalRollNo) !== newRollNo) {
       const allAttendance = this.getAllAttendanceRecords();
       Object.keys(allAttendance).forEach(date => {
@@ -944,6 +954,31 @@ class AttendanceStore {
   }
 
   // ----------------------------------------------------
+  // Clear All Data / Danger Zone Engine
+  // ----------------------------------------------------
+  clearAllAttendanceHistory() {
+    localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify({}));
+    this.notify();
+    return { success: true };
+  }
+
+  deleteAllStudents() {
+    localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify([]));
+    localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify({}));
+    this.notify();
+    return { success: true };
+  }
+
+  resetAllDataToDefault() {
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
+    localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(INITIAL_STUDENTS));
+    localStorage.setItem(STORAGE_KEYS.HOLIDAYS, JSON.stringify(DEFAULT_HOLIDAYS));
+    localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify({}));
+    this.notify();
+    return { success: true };
+  }
+
+  // ----------------------------------------------------
   // WhatsApp Report Formatter
   // ----------------------------------------------------
   generateWhatsAppReport(dateStr) {
@@ -996,7 +1031,7 @@ class AttendanceStore {
   // ----------------------------------------------------
   exportFullDataJSON() {
     return JSON.stringify({
-      version: '4.0-firebase-rtdb',
+      version: '4.5-shakya-cloud',
       exportedAt: new Date().toISOString(),
       settings: this.getSettings(),
       students: this.getStudents(),
@@ -1008,14 +1043,14 @@ class AttendanceStore {
   importFullDataJSON(jsonStr) {
     try {
       const data = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
-      if (data.students && Array.isArray(data.students)) {
-        localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(data.students));
+      if (data.students) {
+        localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(normalizeArray(data.students)));
       }
       if (data.attendance && typeof data.attendance === 'object') {
         localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(data.attendance));
       }
-      if (data.holidays && Array.isArray(data.holidays)) {
-        localStorage.setItem(STORAGE_KEYS.HOLIDAYS, JSON.stringify(data.holidays));
+      if (data.holidays) {
+        localStorage.setItem(STORAGE_KEYS.HOLIDAYS, JSON.stringify(normalizeArray(data.holidays)));
       }
       if (data.settings && typeof data.settings === 'object') {
         localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(data.settings));

@@ -436,10 +436,15 @@ body {
   cursor: pointer;
   transition: all 0.12s ease;
   min-height: 36px;
+  user-select: none;
+}
+
+.btn-3d-status * {
+  pointer-events: none;
 }
 
 .btn-3d-status:active {
-  transform: scale(0.96);
+  transform: scale(0.95);
 }
 
 .btn-3d-status.btn-present.active {
