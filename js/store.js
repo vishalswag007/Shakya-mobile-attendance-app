@@ -1,11 +1,11 @@
 /**
  * AttendEase Data Store & Auth Engine
- * Handles Candidate Photos, Organization Logo, Admin Authentication,
- * 3D Badges, Customization Settings, and Multi-Device Cloud Sync.
+ * Specialized for Coaching Institutes (100+ Students Scalability)
+ * Tracks Roll No, Student Name, Father's Name, Contact No, Address, Batch Time, Course Name, and Photo.
  */
 
 const STORAGE_KEYS = {
-  CANDIDATES: 'attendease_candidates',
+  STUDENTS: 'attendease_students',
   ATTENDANCE: 'attendease_attendance',
   SETTINGS: 'attendease_settings',
   AUTH: 'attendease_admin_auth'
@@ -14,101 +14,132 @@ const STORAGE_KEYS = {
 const DEFAULT_AUTH = {
   username: 'admin',
   password: 'admin123',
-  isLoggedIn: false,
-  role: 'Super Admin',
+  isLoggedIn: true,
+  role: 'Institute Admin',
   lastLogin: null
 };
 
 const DEFAULT_SETTINGS = {
-  orgName: 'AttendEase Systems',
-  orgBranch: 'HQ - Silicon Campus',
-  orgLogo: '⚡',
-  orgLogoUrl: null, // Custom uploaded logo image
+  orgName: 'Apex Coaching Institute',
+  orgBranch: 'Main Campus - Academic Block',
+  orgLogo: '🎓',
+  orgLogoUrl: null,
   themeAccent: 'indigo',
-  workingHours: '09:00 - 18:00',
+  workingHours: '08:00 AM - 08:30 PM',
   gracePeriod: 15,
   soundFeedback: true,
   defaultBulkAction: 'present',
   remoteApiUrl: 'https://api.attendease.app/v1',
-  cloudRoomId: 'GLOBAL-CAMPUS-2026',
+  cloudRoomId: 'APEX-COACHING-2026',
   isCloudSyncActive: false,
-  departments: [
-    'Engineering',
-    'Product & Design',
-    'Quality Assurance',
-    'Human Resources',
-    'Marketing',
-    'Finance',
-    'Operations'
+  courses: [
+    'Class 10th Maths & Science',
+    'Class 11th Science (PCM)',
+    'Class 11th Science (PCB)',
+    'Class 12th Physics & Chemistry',
+    'Class 12th Mathematics',
+    'JEE Mains & Advanced',
+    'NEET Medical Batch',
+    'Foundation Olympiad'
+  ],
+  batchTimings: [
+    '08:00 AM - 10:00 AM (Morning Batch 1)',
+    '10:30 AM - 12:30 PM (Morning Batch 2)',
+    '04:00 PM - 06:00 PM (Evening Batch 1)',
+    '06:30 PM - 08:30 PM (Evening Batch 2)'
   ]
 };
 
-const INITIAL_CANDIDATES = [
+const INITIAL_STUDENTS = [
   {
-    id: 'CAN-101',
+    id: '101',
+    rollNo: '101',
     name: 'Aarav Sharma',
-    department: 'Engineering',
-    role: 'Full Stack Dev',
+    fatherName: 'Rajesh Sharma',
+    contactNo: '+91 98765 43210',
+    address: '42, Civil Lines, Kanpur',
+    batchTime: '08:00 AM - 10:00 AM (Morning Batch 1)',
+    courseName: 'JEE Mains & Advanced',
     email: 'aarav.sharma@example.com',
-    phone: '+91 98765 43210',
-    avatar: '👨‍💻',
+    role: 'Student',
+    avatar: '👨‍🎓',
     photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     createdAt: '2026-08-01'
   },
   {
-    id: 'CAN-102',
+    id: '102',
+    rollNo: '102',
+    name: 'Aarav Sharma', // Same student name to demonstrate Father's Name differentiation!
+    fatherName: 'Suresh Kumar Sharma',
+    contactNo: '+91 98765 43211',
+    address: '15/A, Mall Road, Kanpur',
+    batchTime: '04:00 PM - 06:00 PM (Evening Batch 1)',
+    courseName: 'NEET Medical Batch',
+    email: '',
+    role: 'Student',
+    avatar: '👨‍🎓',
+    photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    createdAt: '2026-08-01'
+  },
+  {
+    id: '103',
+    rollNo: '103',
     name: 'Priya Patel',
-    department: 'Product & Design',
-    role: 'UI/UX Designer',
+    fatherName: 'Mahesh Patel',
+    contactNo: '+91 98765 43212',
+    address: '78, Swaroop Nagar, Kanpur',
+    batchTime: '08:00 AM - 10:00 AM (Morning Batch 1)',
+    courseName: 'Class 12th Physics & Chemistry',
     email: 'priya.patel@example.com',
-    phone: '+91 98765 43211',
-    avatar: '👩‍🎨',
+    role: 'Student',
+    avatar: '👩‍🎓',
     photoUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
     createdAt: '2026-08-02'
   },
   {
-    id: 'CAN-103',
+    id: '104',
+    rollNo: '104',
     name: 'Rohan Mehta',
-    department: 'Engineering',
-    role: 'Backend Architect',
+    fatherName: 'Dinesh Mehta',
+    contactNo: '+91 98765 43213',
+    address: '102, Kakadeo, Coaching Hub',
+    batchTime: '04:00 PM - 06:00 PM (Evening Batch 1)',
+    courseName: 'JEE Mains & Advanced',
     email: 'rohan.mehta@example.com',
-    phone: '+91 98765 43212',
-    avatar: '👨‍💼',
-    photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    role: 'Student',
+    avatar: '👨‍🎓',
+    photoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
     createdAt: '2026-08-03'
   },
   {
-    id: 'CAN-104',
+    id: '105',
+    rollNo: '105',
     name: 'Ananya Gupta',
-    department: 'Quality Assurance',
-    role: 'QA Engineer',
-    email: 'ananya.gupta@example.com',
-    phone: '+91 98765 43213',
-    avatar: '👩‍💻',
+    fatherName: 'Sunil Gupta',
+    contactNo: '+91 98765 43214',
+    address: '56, Shastri Nagar',
+    batchTime: '10:30 AM - 12:30 PM (Morning Batch 2)',
+    courseName: 'Class 10th Maths & Science',
+    email: '',
+    role: 'Student',
+    avatar: '👩‍🎓',
     photoUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
     createdAt: '2026-08-05'
   },
   {
-    id: 'CAN-105',
-    name: 'Vikram Verma',
-    department: 'Human Resources',
-    role: 'HR Specialist',
-    email: 'vikram.verma@example.com',
-    phone: '+91 98765 43214',
-    avatar: '🧑‍💼',
-    photoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-    createdAt: '2026-08-10'
-  },
-  {
-    id: 'CAN-106',
-    name: 'Sneha Reddy',
-    department: 'Marketing',
-    role: 'Content Strategist',
-    email: 'sneha.reddy@example.com',
-    phone: '+91 98765 43215',
-    avatar: '👩‍💼',
+    id: '106',
+    rollNo: '106',
+    name: 'Vikram Singh Verma',
+    fatherName: 'Harish Verma',
+    contactNo: '+91 98765 43215',
+    address: '22/4, Kidwai Nagar',
+    batchTime: '06:30 PM - 08:30 PM (Evening Batch 2)',
+    courseName: 'NEET Medical Batch',
+    email: '',
+    role: 'Student',
+    avatar: '👨‍🎓',
     photoUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-    createdAt: '2026-08-12'
+    createdAt: '2026-08-10'
   }
 ];
 
@@ -119,32 +150,72 @@ class AttendanceStore {
   }
 
   init() {
-    if (!localStorage.getItem(STORAGE_KEYS.AUTH)) {
+    // Auto-login by default for smooth local testing
+    const existingAuth = localStorage.getItem(STORAGE_KEYS.AUTH);
+    if (!existingAuth) {
       localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(DEFAULT_AUTH));
+    } else {
+      try {
+        const parsedAuth = JSON.parse(existingAuth);
+        if (!parsedAuth.isLoggedIn) {
+          parsedAuth.isLoggedIn = true;
+          localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(parsedAuth));
+        }
+      } catch (e) {}
     }
-    if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
+
+    // Auto-migrate settings
+    const existingSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+    if (!existingSettings) {
       localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
+    } else {
+      try {
+        const parsed = JSON.parse(existingSettings);
+        if (!parsed.courses || !parsed.batchTimings) {
+          localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify({ ...DEFAULT_SETTINGS, ...parsed }));
+        }
+      } catch (e) {}
     }
-    if (!localStorage.getItem(STORAGE_KEYS.CANDIDATES)) {
-      localStorage.setItem(STORAGE_KEYS.CANDIDATES, JSON.stringify(INITIAL_CANDIDATES));
+
+    // Auto-migrate students with Father's Name
+    const existingStudents = localStorage.getItem(STORAGE_KEYS.STUDENTS);
+    if (!existingStudents) {
+      localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(INITIAL_STUDENTS));
+    } else {
+      try {
+        const parsed = JSON.parse(existingStudents);
+        if (!Array.isArray(parsed) || parsed.length === 0 || !parsed[0].fatherName) {
+          localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(INITIAL_STUDENTS));
+        }
+      } catch (e) {}
     }
     if (!localStorage.getItem(STORAGE_KEYS.ATTENDANCE)) {
       const today = new Date().toISOString().split('T')[0];
       const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      const dayBefore = new Date(Date.now() - 172800000).toISOString().split('T')[0];
       
       const seedAttendance = {
+        [dayBefore]: {
+          '101': 'present',
+          '102': 'present',
+          '103': 'present',
+          '104': 'absent',
+          '105': 'present',
+          '106': 'present'
+        },
         [yesterday]: {
-          'CAN-101': 'present',
-          'CAN-102': 'present',
-          'CAN-103': 'absent',
-          'CAN-104': 'present',
-          'CAN-105': 'leave',
-          'CAN-106': 'present'
+          '101': 'present',
+          '102': 'absent',
+          '103': 'present',
+          '104': 'present',
+          '105': 'leave',
+          '106': 'present'
         },
         [today]: {
-          'CAN-101': 'present',
-          'CAN-102': 'present',
-          'CAN-103': 'leave'
+          '101': 'present',
+          '102': 'present',
+          '103': 'leave',
+          '104': 'present'
         }
       };
       localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(seedAttendance));
@@ -217,12 +288,24 @@ class AttendanceStore {
 
   // --- Settings & Organization Logo Methods ---
   getSettings() {
+    let settings = DEFAULT_SETTINGS;
     try {
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS));
-      return { ...DEFAULT_SETTINGS, ...parsed };
+      if (parsed && typeof parsed === 'object') {
+        settings = { ...DEFAULT_SETTINGS, ...parsed };
+      }
     } catch (e) {
-      return DEFAULT_SETTINGS;
+      settings = DEFAULT_SETTINGS;
     }
+
+    if (!Array.isArray(settings.courses) || settings.courses.length === 0) {
+      settings.courses = [...DEFAULT_SETTINGS.courses];
+    }
+    if (!Array.isArray(settings.batchTimings) || settings.batchTimings.length === 0) {
+      settings.batchTimings = [...DEFAULT_SETTINGS.batchTimings];
+    }
+
+    return settings;
   }
 
   updateSettings(newSettings) {
@@ -241,60 +324,133 @@ class AttendanceStore {
     return this.updateSettings({ orgLogoUrl: null });
   }
 
-  addDepartment(deptName) {
-    if (!deptName || !deptName.trim()) return;
+  addCourse(courseName) {
+    if (!courseName || !courseName.trim()) return;
     const settings = this.getSettings();
-    const clean = deptName.trim();
-    if (!settings.departments.includes(clean)) {
-      settings.departments.push(clean);
-      this.updateSettings({ departments: settings.departments });
+    const clean = courseName.trim();
+    if (!settings.courses.includes(clean)) {
+      settings.courses.push(clean);
+      this.updateSettings({ courses: settings.courses });
     }
   }
 
-  removeDepartment(deptName) {
+  removeCourse(courseName) {
     const settings = this.getSettings();
-    settings.departments = settings.departments.filter(d => d !== deptName);
-    this.updateSettings({ departments: settings.departments });
+    settings.courses = settings.courses.filter(c => c !== courseName);
+    this.updateSettings({ courses: settings.courses });
   }
 
-  // --- Candidate Methods ---
-  getCandidates() {
+  addBatch(batchStr) {
+    if (!batchStr || !batchStr.trim()) return;
+    const settings = this.getSettings();
+    const clean = batchStr.trim();
+    if (!settings.batchTimings.includes(clean)) {
+      settings.batchTimings.push(clean);
+      this.updateSettings({ batchTimings: settings.batchTimings });
+    }
+  }
+
+  removeBatch(batchStr) {
+    const settings = this.getSettings();
+    settings.batchTimings = settings.batchTimings.filter(b => b !== batchStr);
+    this.updateSettings({ batchTimings: settings.batchTimings });
+  }
+
+  // --- Student Methods (Scalable for 100+ Students) ---
+  getStudents() {
+    let list = [];
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.CANDIDATES)) || [];
+      list = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS));
     } catch (e) {
-      return [];
+      list = null;
     }
+
+    if (!Array.isArray(list) || list.length === 0) {
+      list = INITIAL_STUDENTS;
+      localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(INITIAL_STUDENTS));
+    }
+
+    // Auto-normalize student fields to guarantee zero runtime exceptions
+    return list.map((s, idx) => ({
+      id: String(s.rollNo || s.id || (101 + idx)),
+      rollNo: String(s.rollNo || s.id || (101 + idx)),
+      name: s.name || 'Student ' + (101 + idx),
+      fatherName: s.fatherName || 'Guardian',
+      contactNo: s.contactNo || s.phone || '+91 98765 43210',
+      address: s.address || 'Kanpur',
+      batchTime: s.batchTime || '08:00 AM - 10:00 AM (Morning Batch 1)',
+      courseName: s.courseName || s.department || 'JEE Mains & Advanced',
+      email: s.email || '',
+      avatar: s.avatar || '👨‍🎓',
+      photoUrl: s.photoUrl || null,
+      role: 'Student',
+      createdAt: s.createdAt || '2026-08-01'
+    }));
+  }
+
+  getCandidates() {
+    return this.getStudents();
+  }
+
+  getStudentByRollNo(rollNo) {
+    return this.getStudents().find(s => String(s.rollNo) === String(rollNo) || String(s.id) === String(rollNo));
   }
 
   getCandidateById(id) {
-    return this.getCandidates().find(c => c.id === id);
+    return this.getStudentByRollNo(id);
   }
 
-  addCandidate(candidateData) {
-    const candidates = this.getCandidates();
-    const newCandidate = {
-      id: candidateData.id ? candidateData.id.trim() : `CAN-${Math.floor(100 + Math.random() * 900)}`,
-      name: candidateData.name.trim(),
-      department: candidateData.department || 'General',
-      role: candidateData.role || 'Member',
-      email: candidateData.email || '',
-      phone: candidateData.phone || '',
-      avatar: candidateData.avatar || '👤',
-      photoUrl: candidateData.photoUrl || null,
+  addStudent(studentData) {
+    const students = this.getStudents();
+    
+    // Generate next roll number if not specified
+    let rollNo = studentData.rollNo ? String(studentData.rollNo).trim() : '';
+    if (!rollNo) {
+      const maxRoll = students.reduce((max, s) => {
+        const num = parseInt(s.rollNo, 10);
+        return (!isNaN(num) && num > max) ? num : max;
+      }, 100);
+      rollNo = String(maxRoll + 1);
+    }
+
+    const newStudent = {
+      id: rollNo,
+      rollNo: rollNo,
+      name: studentData.name ? studentData.name.trim() : 'Unknown Student',
+      fatherName: studentData.fatherName ? studentData.fatherName.trim() : 'Guardian',
+      contactNo: studentData.contactNo ? studentData.contactNo.trim() : '',
+      address: studentData.address ? studentData.address.trim() : '',
+      batchTime: studentData.batchTime || '08:00 AM - 10:00 AM (Morning Batch 1)',
+      courseName: studentData.courseName || 'General Coaching',
+      email: studentData.email ? studentData.email.trim() : '',
+      avatar: studentData.avatar || '👨‍🎓',
+      photoUrl: studentData.photoUrl || null,
+      role: 'Student',
       createdAt: new Date().toISOString().split('T')[0]
     };
 
-    candidates.unshift(newCandidate);
-    localStorage.setItem(STORAGE_KEYS.CANDIDATES, JSON.stringify(candidates));
+    // Remove existing if duplicate roll number to update
+    const filtered = students.filter(s => String(s.rollNo) !== rollNo);
+    filtered.unshift(newStudent);
+
+    localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(filtered));
     this.notify();
-    return newCandidate;
+    return newStudent;
+  }
+
+  addCandidate(data) {
+    return this.addStudent(data);
+  }
+
+  deleteStudent(rollNo) {
+    let students = this.getStudents();
+    students = students.filter(s => String(s.rollNo) !== String(rollNo) && String(s.id) !== String(rollNo));
+    localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(students));
+    this.notify();
   }
 
   deleteCandidate(id) {
-    let candidates = this.getCandidates();
-    candidates = candidates.filter(c => c.id !== id);
-    localStorage.setItem(STORAGE_KEYS.CANDIDATES, JSON.stringify(candidates));
-    this.notify();
+    this.deleteStudent(id);
   }
 
   // --- Attendance Methods ---
@@ -311,48 +467,49 @@ class AttendanceStore {
     return all[dateStr] || {};
   }
 
-  markAttendance(candidateId, dateStr, status) {
+  markAttendance(rollNo, dateStr, status) {
     const all = this.getAllAttendanceRecords();
     if (!all[dateStr]) {
       all[dateStr] = {};
     }
     
-    if (all[dateStr][candidateId] === status) {
-      delete all[dateStr][candidateId];
+    if (all[dateStr][rollNo] === status) {
+      delete all[dateStr][rollNo];
     } else {
-      all[dateStr][candidateId] = status;
+      all[dateStr][rollNo] = status;
     }
 
     localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(all));
     this.notify();
-    return all[dateStr][candidateId] || 'unmarked';
+    return all[dateStr][rollNo] || 'unmarked';
   }
 
-  markAllAttendance(dateStr, status) {
+  markAllAttendance(dateStr, status, filteredStudents = null) {
     const all = this.getAllAttendanceRecords();
     if (!all[dateStr]) {
       all[dateStr] = {};
     }
 
-    const candidates = this.getCandidates();
-    candidates.forEach(c => {
-      all[dateStr][c.id] = status;
+    const students = filteredStudents || this.getStudents();
+    students.forEach(s => {
+      all[dateStr][s.rollNo] = status;
     });
 
     localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(all));
     this.notify();
   }
 
-  getStatsForDate(dateStr) {
-    const candidates = this.getCandidates();
+  getStatsForDate(dateStr, filteredStudents = null) {
+    const students = filteredStudents || this.getStudents();
     const attendance = this.getAttendanceForDate(dateStr);
-    const total = candidates.length;
+    const total = students.length;
 
     let present = 0;
     let absent = 0;
     let leave = 0;
 
-    Object.values(attendance).forEach(status => {
+    students.forEach(s => {
+      const status = attendance[s.rollNo];
       if (status === 'present') present++;
       else if (status === 'absent') absent++;
       else if (status === 'leave') leave++;
@@ -364,15 +521,108 @@ class AttendanceStore {
     return { total, present, absent, leave, unmarked, rate };
   }
 
-  getCandidateAttendanceHistory(candidateId) {
+  // --- Specialized Single Student History Methods (Weekly & Monthly) ---
+  getStudentHistoryWeekly(rollNo, anchorDateStr) {
+    const all = this.getAllAttendanceRecords();
+    const anchor = new Date(anchorDateStr + 'T00:00:00');
+    
+    // Get Monday of the week
+    const day = anchor.getDay();
+    const diffToMonday = anchor.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(anchor.setDate(diffToMonday));
+
+    const weekLogs = [];
+    let present = 0, absent = 0, leave = 0, totalClasses = 0;
+
+    for (let i = 0; i < 7; i++) {
+      const current = new Date(monday);
+      current.setDate(monday.getDate() + i);
+      const dateKey = current.toISOString().split('T')[0];
+
+      const dayName = current.toLocaleDateString('en-US', { weekday: 'short' });
+      const status = (all[dateKey] && all[dateKey][rollNo]) || 'unmarked';
+
+      if (status === 'present') present++;
+      else if (status === 'absent') absent++;
+      else if (status === 'leave') leave++;
+
+      if (status !== 'unmarked') totalClasses++;
+
+      weekLogs.push({
+        date: dateKey,
+        dayName,
+        status
+      });
+    }
+
+    const rate = totalClasses > 0 ? Math.round((present / totalClasses) * 100) : (present > 0 ? 100 : 0);
+
+    return {
+      weekRange: `${weekLogs[0].date} to ${weekLogs[6].date}`,
+      logs: weekLogs,
+      present,
+      absent,
+      leave,
+      totalClasses,
+      rate
+    };
+  }
+
+  getStudentHistoryMonthly(rollNo, yearMonthStr) {
+    // yearMonthStr: 'YYYY-MM'
+    const all = this.getAllAttendanceRecords();
+    const [year, month] = yearMonthStr.split('-').map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    const monthLogs = [];
+    let present = 0, absent = 0, leave = 0, totalClasses = 0;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dd = String(d).padStart(2, '0');
+      const mm = String(month).padStart(2, '0');
+      const dateKey = `${year}-${mm}-${dd}`;
+
+      const dateObj = new Date(year, month - 1, d);
+      const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+      const status = (all[dateKey] && all[dateKey][rollNo]) || 'unmarked';
+
+      if (status === 'present') present++;
+      else if (status === 'absent') absent++;
+      else if (status === 'leave') leave++;
+
+      if (status !== 'unmarked') totalClasses++;
+
+      monthLogs.push({
+        date: dateKey,
+        day: d,
+        dayName,
+        status
+      });
+    }
+
+    const rate = totalClasses > 0 ? Math.round((present / totalClasses) * 100) : (present > 0 ? 100 : 0);
+
+    return {
+      yearMonth: yearMonthStr,
+      monthName: new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+      logs: monthLogs,
+      present,
+      absent,
+      leave,
+      totalClasses,
+      rate
+    };
+  }
+
+  getCandidateAttendanceHistory(rollNo) {
     const all = this.getAllAttendanceRecords();
     const history = [];
 
     Object.keys(all).sort().reverse().forEach(date => {
-      if (all[date][candidateId]) {
+      if (all[date][rollNo]) {
         history.push({
           date,
-          status: all[date][candidateId]
+          status: all[date][rollNo]
         });
       }
     });
@@ -380,18 +630,18 @@ class AttendanceStore {
     return history;
   }
 
-  // --- Multi-Device Cloud Room ---
+  // --- Cloud Room & Backup ---
   setCloudRoomId(roomId) {
     this.updateSettings({ cloudRoomId: roomId.trim() });
   }
 
-  // --- Backup & Restore ---
   exportFullDataJSON() {
     const data = {
-      version: '1.4.0',
+      version: '2.0.0',
+      type: 'Coaching Institute Attendance',
       exportedAt: new Date().toISOString(),
       settings: this.getSettings(),
-      candidates: this.getCandidates(),
+      students: this.getStudents(),
       attendance: this.getAllAttendanceRecords()
     };
     return JSON.stringify(data, null, 2);
@@ -403,8 +653,10 @@ class AttendanceStore {
       if (parsed.settings) {
         localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(parsed.settings));
       }
-      if (parsed.candidates && Array.isArray(parsed.candidates)) {
-        localStorage.setItem(STORAGE_KEYS.CANDIDATES, JSON.stringify(parsed.candidates));
+      if (parsed.students && Array.isArray(parsed.students)) {
+        localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(parsed.students));
+      } else if (parsed.candidates && Array.isArray(parsed.candidates)) {
+        localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(parsed.candidates));
       }
       if (parsed.attendance && typeof parsed.attendance === 'object') {
         localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(parsed.attendance));

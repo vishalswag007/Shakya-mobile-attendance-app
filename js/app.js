@@ -1,17 +1,20 @@
 /**
- * AttendEase Application Controller (Clean 3D Edition)
- * Handles 3D Tactile Interactions, Organization Logo Upload,
- * Candidate Photo Processing, 3D Digital ID Badge, and Audio Feedback.
+ * AttendEase Coaching Institute Edition (100+ Students Scalability)
+ * Handles Student Registration (Roll No, Name, Father Name, Contact, Address, Batch, Course, Photo),
+ * Prominent Active Month Display, Batch/Course Filtering, and Dedicated Weekly/Monthly Student History.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
   // App State
   let currentDate = getTodayDateStr();
-  let currentDeptFilter = 'all';
+  let currentBatchFilter = 'all';
+  let currentCourseFilter = 'all';
   let searchQuery = '';
   let candidateSearchQuery = '';
   let historyDate = getTodayDateStr();
   let historyStatusFilter = 'all';
+  let selectedStudentRollNo = null;
+  let historyViewMode = 'weekly'; // 'weekly' | 'monthly'
   let deferredPrompt = null;
   let audioCtx = null;
 
@@ -35,13 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginLogoEmoji = document.getElementById('login-logo-emoji');
   const loginLogoImg = document.getElementById('login-logo-img');
 
-  // Organization Logo Upload DOM
+  // Logo Upload DOM
   const inputOrgLogoFile = document.getElementById('input-org-logo-file');
   const settingsLogoImg = document.getElementById('settings-logo-img');
   const settingsLogoEmoji = document.getElementById('settings-logo-emoji');
   const btnRemoveOrgLogo = document.getElementById('btn-remove-org-logo');
 
-  // 3D Circular Attendance Gauge DOM
+  // Month Display & Gauge DOM
+  const currentMonthDisplay = document.getElementById('current-month-display');
   const gaugeCircleStroke = document.getElementById('gauge-circle-stroke');
   const gaugePercentText = document.getElementById('gauge-percent-text');
   const gaugeStatusSubtext = document.getElementById('gauge-status-subtext');
@@ -56,19 +60,27 @@ document.addEventListener('DOMContentLoaded', () => {
   const attendanceList = document.getElementById('attendance-list');
   const attendanceSearch = document.getElementById('attendance-search');
   const btnMarkAllPresent = document.getElementById('btn-mark-all-present');
-  const deptChipsContainer = document.getElementById('dept-filter-chips');
+  const batchFilterChips = document.getElementById('batch-filter-chips');
+  const courseFilterChips = document.getElementById('course-filter-chips');
 
   const statTotal = document.getElementById('stat-total');
   const statPresent = document.getElementById('stat-present');
   const statAbsent = document.getElementById('stat-absent');
   const statLeave = document.getElementById('stat-leave');
 
-  // Candidate Directory DOM
+  // Student Directory DOM
   const candidatesDirectoryList = document.getElementById('candidates-directory-list');
   const candidateDirectorySearch = document.getElementById('candidate-directory-search');
   const candidateCountBadge = document.getElementById('candidate-count-badge');
 
-  // History Tab DOM
+  // Dedicated Student History View DOM
+  const historyStudentSelect = document.getElementById('history-student-select');
+  const historyStudentCard = document.getElementById('history-student-card');
+  const btnViewWeekly = document.getElementById('btn-view-weekly');
+  const btnViewMonthly = document.getElementById('btn-view-monthly');
+  const individualHistoryContent = document.getElementById('individual-history-content');
+
+  // Date-wise Logs Tab DOM
   const historyDatePicker = document.getElementById('history-date-picker');
   const historySummaryDate = document.getElementById('history-summary-date');
   const historySummaryRate = document.getElementById('history-summary-rate');
@@ -77,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const histLeave = document.getElementById('hist-leave');
   const historyRecordsList = document.getElementById('history-records-list');
 
-  // Candidate Registration DOM
+  // Student Registration Form DOM
   const modalAddCandidate = document.getElementById('modal-add-candidate');
   const formAddCandidate = document.getElementById('form-add-candidate');
   const btnOpenAddCandidate = document.getElementById('btn-open-add-candidate');
@@ -89,9 +101,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const photoPreviewEmoji = document.getElementById('photo-preview-emoji');
   const btnRemovePhoto = document.getElementById('btn-remove-photo');
   const candidatePhotoData = document.getElementById('candidate-photo-data');
-  const candidateAvatarInput = document.getElementById('candidate-avatar');
-  const avatarOptions = document.querySelectorAll('.avatar-option');
-  const candidateDeptSelect = document.getElementById('candidate-dept');
+  const studentRollNo = document.getElementById('student-roll-no');
+  const studentName = document.getElementById('student-name');
+  const studentFatherName = document.getElementById('student-father-name');
+  const studentContactNo = document.getElementById('student-contact-no');
+  const studentEmail = document.getElementById('student-email');
+  const studentCourse = document.getElementById('student-course');
+  const studentBatch = document.getElementById('student-batch');
+  const studentAddress = document.getElementById('student-address');
 
   // Modals DOM
   const modalCandidateDetail = document.getElementById('modal-candidate-detail');
@@ -116,22 +133,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnExportBackup = document.getElementById('btn-export-backup');
   const inputImportBackup = document.getElementById('input-import-backup');
 
-  // Deployment DOM
-  const inputCloudRoomId = document.getElementById('input-cloud-room-id');
-  const btnUpdateRoomId = document.getElementById('btn-update-room-id');
-  const btnTriggerPwaInstall = document.getElementById('btn-trigger-pwa-install');
-  const btnDeployVercelGuide = document.getElementById('btn-deploy-vercel-guide');
-  const btnDeployCpanelGuide = document.getElementById('btn-deploy-cpanel-guide');
-  const btnDownloadDeployBundle = document.getElementById('btn-download-deploy-bundle');
-
-  // Desktop Controls
-  const toggleFrameBtn = document.getElementById('toggle-frame-btn');
-  const resetDataBtn = document.getElementById('reset-data-btn');
-  const deviceContainer = document.getElementById('device-container');
-
   // Export Buttons
   const btnExportExcel = document.getElementById('btn-export-excel');
   const btnSyncSheets = document.getElementById('btn-sync-sheets');
+  const toggleFrameBtn = document.getElementById('toggle-frame-btn');
+  const resetDataBtn = document.getElementById('reset-data-btn');
+  const deviceContainer = document.getElementById('device-container');
 
   // ----------------------------------------------------
   // Initialization & Auth Guard
@@ -158,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ----------------------------------------------------
-  // Audio & Tactile Synthesizer
+  // Audio Feedback Synthesizer
   // ----------------------------------------------------
   function playTactileClick() {
     try {
@@ -203,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----------------------------------------------------
-  // Date Helpers
+  // Date & Month Helpers
   // ----------------------------------------------------
   function getTodayDateStr() {
     const today = new Date();
@@ -219,10 +226,19 @@ document.addEventListener('DOMContentLoaded', () => {
     return dateObj.toLocaleDateString('en-US', options);
   }
 
+  function updateMonthDisplay() {
+    const dateObj = new Date(currentDate + 'T00:00:00');
+    const monthName = dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    if (currentMonthDisplay) {
+      currentMonthDisplay.textContent = monthName;
+    }
+  }
+
   function initDatePickers() {
     dateInput.value = currentDate;
     historyDatePicker.value = historyDate;
     updateDateBadge();
+    updateMonthDisplay();
   }
 
   function updateDateBadge() {
@@ -236,6 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
       dateBadgeToday.textContent = formatted.toUpperCase();
       dateBadgeToday.className = 'text-[10px] bg-indigo-100 text-indigo-800 border border-indigo-200 px-2.5 py-0.5 rounded-full font-bold shadow-sm';
     }
+    updateMonthDisplay();
   }
 
   function changeDate(delta) {
@@ -300,53 +317,80 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       headerBrandImg.classList.add('hidden');
       headerBrandEmoji.classList.remove('hidden');
-      headerBrandEmoji.textContent = settings.orgLogo || '⚡';
+      headerBrandEmoji.textContent = settings.orgLogo || '🎓';
 
       loginLogoImg.classList.add('hidden');
       loginLogoEmoji.classList.remove('hidden');
-      loginLogoEmoji.textContent = settings.orgLogo || '⚡';
+      loginLogoEmoji.textContent = settings.orgLogo || '🎓';
 
       settingsLogoImg.classList.add('hidden');
       settingsLogoEmoji.classList.remove('hidden');
-      settingsLogoEmoji.textContent = settings.orgLogo || '⚡';
+      settingsLogoEmoji.textContent = settings.orgLogo || '🎓';
       btnRemoveOrgLogo.classList.add('hidden');
     }
 
-    headerOrgTitle.innerHTML = `${escapeHtml(settings.orgName || 'AttendEase Systems')}`;
-    headerOrgSubtitle.textContent = settings.orgBranch || 'HQ Campus';
+    headerOrgTitle.innerHTML = `${escapeHtml(settings.orgName || 'Apex Coaching Institute')}`;
+    headerOrgSubtitle.textContent = settings.orgBranch || 'Main Campus';
 
     // Settings Inputs
     settingOrgName.value = settings.orgName || '';
     settingOrgBranch.value = settings.orgBranch || '';
-    inputCloudRoomId.value = settings.cloudRoomId || 'GLOBAL-CAMPUS-2026';
 
-    renderDepartmentUI(settings.departments || []);
+    // Render Filter Chips and Dropdowns
+    renderCourseAndBatchUI(settings.courses || [], settings.batchTimings || []);
   }
 
-  function renderDepartmentUI(departments) {
-    deptChipsContainer.innerHTML = `
-      <button class="chip ${currentDeptFilter === 'all' ? 'active bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200'} text-[11px] px-3 py-1 rounded-full font-bold whitespace-nowrap" data-dept="all">All</button>
-      ${departments.map(dept => `
-        <button class="chip ${currentDeptFilter === dept ? 'active bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200'} text-[11px] px-3 py-1 rounded-full font-bold whitespace-nowrap" data-dept="${escapeHtml(dept)}">${escapeHtml(dept)}</button>
-      `).join('')}
+  function renderCourseAndBatchUI(courses, batchTimings) {
+    // 1. Batch Filter Chips
+    batchFilterChips.innerHTML = `
+      <button class="chip ${currentBatchFilter === 'all' ? 'active bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200'} text-[11px] px-3 py-1 rounded-full font-bold whitespace-nowrap" data-batch="all">All Batches</button>
+      ${batchTimings.map(b => {
+        const shortName = b.split('(')[1] ? b.split('(')[1].replace(')', '') : b.substring(0, 15);
+        return `
+          <button class="chip ${currentBatchFilter === b ? 'active bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200'} text-[11px] px-3 py-1 rounded-full font-bold whitespace-nowrap" data-batch="${escapeHtml(b)}">
+            ${escapeHtml(shortName)}
+          </button>
+        `;
+      }).join('')}
     `;
 
-    deptChipsContainer.querySelectorAll('.chip').forEach(chip => {
+    batchFilterChips.querySelectorAll('.chip').forEach(chip => {
       chip.addEventListener('click', () => {
-        currentDeptFilter = chip.getAttribute('data-dept');
-        renderDepartmentUI(departments);
+        currentBatchFilter = chip.getAttribute('data-batch');
+        renderCourseAndBatchUI(courses, batchTimings);
         renderAttendanceList();
+        renderStats();
       });
     });
 
-    candidateDeptSelect.innerHTML = departments.map(d => `
-      <option value="${escapeHtml(d)}">${escapeHtml(d)}</option>
-    `).join('');
+    // 2. Course Filter Chips
+    courseFilterChips.innerHTML = `
+      <button class="chip ${currentCourseFilter === 'all' ? 'active bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200'} text-[11px] px-3 py-1 rounded-full font-bold whitespace-nowrap" data-course="all">All Courses</button>
+      ${courses.map(c => `
+        <button class="chip ${currentCourseFilter === c ? 'active bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200'} text-[11px] px-3 py-1 rounded-full font-bold whitespace-nowrap" data-course="${escapeHtml(c)}">
+          ${escapeHtml(c)}
+        </button>
+      `).join('')}
+    `;
 
-    settingsDeptTags.innerHTML = departments.map(d => `
+    courseFilterChips.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        currentCourseFilter = chip.getAttribute('data-course');
+        renderCourseAndBatchUI(courses, batchTimings);
+        renderAttendanceList();
+        renderStats();
+      });
+    });
+
+    // 3. Populate Registration Selects
+    studentCourse.innerHTML = courses.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    studentBatch.innerHTML = batchTimings.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
+
+    // 4. Settings Course List
+    settingsDeptTags.innerHTML = courses.map(c => `
       <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700">
-        ${escapeHtml(d)}
-        <button class="btn-remove-dept text-slate-400 hover:text-rose-600 transition" data-dept="${escapeHtml(d)}" title="Remove Department">
+        ${escapeHtml(c)}
+        <button class="btn-remove-dept text-slate-400 hover:text-rose-600 transition" data-course="${escapeHtml(c)}" title="Remove Course">
           <i data-lucide="x" class="w-3 h-3"></i>
         </button>
       </span>
@@ -354,10 +398,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     settingsDeptTags.querySelectorAll('.btn-remove-dept').forEach(btn => {
       btn.addEventListener('click', () => {
-        const dept = btn.getAttribute('data-dept');
-        if (confirm(`Remove "${dept}" from departments?`)) {
-          window.attendanceStore.removeDepartment(dept);
-          showToast(`Department "${dept}" removed`, 'trash-2');
+        const course = btn.getAttribute('data-course');
+        if (confirm(`Remove "${course}" from courses?`)) {
+          window.attendanceStore.removeCourse(course);
+          showToast(`Course removed`, 'trash-2');
         }
       });
     });
@@ -368,11 +412,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // ----------------------------------------------------
   // Avatar / Photo Renderer Helper
   // ----------------------------------------------------
-  function renderAvatar(candidate) {
-    if (candidate.photoUrl) {
-      return `<img src="${escapeHtml(candidate.photoUrl)}" alt="${escapeHtml(candidate.name)}" class="candidate-avatar-img">`;
+  function renderAvatar(student) {
+    if (student.photoUrl) {
+      return `<img src="${escapeHtml(student.photoUrl)}" alt="${escapeHtml(student.name)}" class="student-avatar-img">`;
     }
-    return `<span>${candidate.avatar || '👤'}</span>`;
+    return `<span>${student.avatar || '👨‍🎓'}</span>`;
   }
 
   // ----------------------------------------------------
@@ -404,50 +448,65 @@ document.addEventListener('DOMContentLoaded', () => {
           fabAddCandidate.style.display = 'none';
         }
 
+        if (targetTab === 'tab-student-history') {
+          renderStudentHistoryDropdown();
+          renderIndividualStudentHistory();
+        }
+
         if (window.lucide) lucide.createIcons();
       });
     });
   }
 
   // ----------------------------------------------------
-  // Rendering Logic
+  // Rendering Logic (Coaching Students)
   // ----------------------------------------------------
+  function getFilteredStudents() {
+    const students = window.attendanceStore.getStudents() || [];
+    const q = (searchQuery || '').trim().toLowerCase();
+
+    return students.filter(s => {
+      const matchBatch = currentBatchFilter === 'all' || s.batchTime === currentBatchFilter;
+      const matchCourse = currentCourseFilter === 'all' || s.courseName === currentCourseFilter;
+      const matchSearch = !q || 
+        (s.name && s.name.toLowerCase().includes(q)) ||
+        (s.rollNo && String(s.rollNo).toLowerCase().includes(q)) ||
+        (s.fatherName && s.fatherName.toLowerCase().includes(q)) ||
+        (s.courseName && s.courseName.toLowerCase().includes(q));
+      return matchBatch && matchCourse && matchSearch;
+    });
+  }
+
   function renderAll() {
+    updateMonthDisplay();
     renderAttendanceList();
     renderStats();
     renderCandidatesDirectory();
+    renderStudentHistoryDropdown();
+    renderIndividualStudentHistory();
     renderHistory();
     if (window.lucide) lucide.createIcons();
   }
 
   function renderStats() {
-    const stats = window.attendanceStore.getStatsForDate(currentDate);
+    const filtered = getFilteredStudents();
+    const stats = window.attendanceStore.getStatsForDate(currentDate, filtered);
     statTotal.textContent = stats.total;
     statPresent.textContent = stats.present;
     statAbsent.textContent = stats.absent;
     statLeave.textContent = stats.leave;
 
-    // 3D Circular Progress Gauge Animation
     if (gaugeCircleStroke) {
       gaugeCircleStroke.setAttribute('stroke-dasharray', `${stats.rate}, 100`);
       gaugePercentText.textContent = `${stats.rate}%`;
       const markedCount = stats.present + stats.absent + stats.leave;
-      gaugeStatusSubtext.textContent = `${markedCount} of ${stats.total} marked today`;
+      gaugeStatusSubtext.textContent = `${markedCount} of ${stats.total} students marked today`;
     }
   }
 
   function renderAttendanceList() {
-    const candidates = window.attendanceStore.getCandidates();
+    const filtered = getFilteredStudents();
     const attendanceMap = window.attendanceStore.getAttendanceForDate(currentDate);
-
-    const filtered = candidates.filter(c => {
-      const matchDept = currentDeptFilter === 'all' || c.department === currentDeptFilter;
-      const matchSearch = !searchQuery || 
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.role.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchDept && matchSearch;
-    });
 
     if (filtered.length === 0) {
       attendanceList.innerHTML = `
@@ -455,15 +514,15 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400">
             <i data-lucide="user-x" class="w-6 h-6"></i>
           </div>
-          <p class="text-sm font-bold text-slate-800">No candidates found</p>
-          <p class="text-xs text-slate-500 mt-1">Try adjusting your search or add a new candidate.</p>
+          <p class="text-sm font-bold text-slate-800">No students match filter</p>
+          <p class="text-xs text-slate-500 mt-1">Adjust your search or register a new student.</p>
         </div>
       `;
       return;
     }
 
-    attendanceList.innerHTML = filtered.map(candidate => {
-      const status = attendanceMap[candidate.id] || 'unmarked';
+    attendanceList.innerHTML = filtered.map(student => {
+      const status = attendanceMap[student.rollNo] || 'unmarked';
       
       const isPresent = status === 'present';
       const isAbsent = status === 'absent';
@@ -475,18 +534,29 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (isLeave) statusCardClass = 'status-leave';
 
       return `
-        <div class="candidate-card ${statusCardClass}" data-id="${candidate.id}">
+        <div class="student-card ${statusCardClass}" data-roll="${student.rollNo}">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3 cursor-pointer candidate-info-trigger" data-id="${candidate.id}">
+            <div class="flex items-center gap-3 cursor-pointer student-info-trigger" data-roll="${student.rollNo}">
               <div class="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-2xl shadow-sm overflow-hidden shrink-0">
-                ${renderAvatar(candidate)}
+                ${renderAvatar(student)}
               </div>
               <div>
                 <div class="flex items-center gap-2">
-                  <h4 class="font-bold text-sm text-slate-900">${escapeHtml(candidate.name)}</h4>
-                  <span class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-indigo-700 font-mono font-bold border border-slate-200">${candidate.id}</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 font-mono font-black border border-indigo-200">Roll: ${student.rollNo}</span>
+                  <h4 class="font-extrabold text-sm text-slate-900">${escapeHtml(student.name)}</h4>
                 </div>
-                <p class="text-xs text-slate-500 font-medium">${escapeHtml(candidate.role)} • <span class="text-indigo-600 font-semibold">${escapeHtml(candidate.department)}</span></p>
+                
+                <!-- Father's Name (Distinct differentiator) -->
+                <div class="mt-1 flex items-center gap-1.5 flex-wrap">
+                  <span class="father-name-badge">
+                    👨 S/o ${escapeHtml(student.fatherName)}
+                  </span>
+                </div>
+
+                <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                  <span class="batch-pill">${escapeHtml(student.batchTime.split('(')[0])}</span>
+                  <span class="course-pill">${escapeHtml(student.courseName)}</span>
+                </div>
               </div>
             </div>
 
@@ -495,15 +565,15 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           </div>
 
-          <!-- 3D Tactile Attendance Buttons -->
+          <!-- 3D Attendance Buttons -->
           <div class="attendance-actions">
-            <button class="btn-status btn-present ${isPresent ? 'active' : ''}" data-status="present" data-candidate="${candidate.id}">
+            <button class="btn-status btn-present ${isPresent ? 'active' : ''}" data-status="present" data-roll="${student.rollNo}">
               <i data-lucide="check" class="w-3.5 h-3.5"></i> Present
             </button>
-            <button class="btn-status btn-absent ${isAbsent ? 'active' : ''}" data-status="absent" data-candidate="${candidate.id}">
+            <button class="btn-status btn-absent ${isAbsent ? 'active' : ''}" data-status="absent" data-roll="${student.rollNo}">
               <i data-lucide="x" class="w-3.5 h-3.5"></i> Absent
             </button>
-            <button class="btn-status btn-leave ${isLeave ? 'active' : ''}" data-status="leave" data-candidate="${candidate.id}">
+            <button class="btn-status btn-leave ${isLeave ? 'active' : ''}" data-status="leave" data-roll="${student.rollNo}">
               <i data-lucide="clock" class="w-3.5 h-3.5"></i> Leave
             </button>
           </div>
@@ -515,16 +585,16 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         playTactileClick();
-        const candidateId = btn.getAttribute('data-candidate');
+        const rollNo = btn.getAttribute('data-roll');
         const status = btn.getAttribute('data-status');
-        window.attendanceStore.markAttendance(candidateId, currentDate, status);
+        window.attendanceStore.markAttendance(rollNo, currentDate, status);
       });
     });
 
-    attendanceList.querySelectorAll('.candidate-info-trigger').forEach(el => {
+    attendanceList.querySelectorAll('.student-info-trigger').forEach(el => {
       el.addEventListener('click', () => {
-        const id = el.getAttribute('data-id');
-        openCandidateDetailModal(id);
+        const roll = el.getAttribute('data-roll');
+        openCandidateDetailModal(roll);
       });
     });
   }
@@ -543,47 +613,48 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderCandidatesDirectory() {
-    const candidates = window.attendanceStore.getCandidates();
-    candidateCountBadge.textContent = candidates.length;
+    const students = window.attendanceStore.getStudents();
+    candidateCountBadge.textContent = students.length;
 
-    const filtered = candidates.filter(c => {
+    const filtered = students.filter(s => {
       if (!candidateSearchQuery) return true;
       const q = candidateSearchQuery.toLowerCase();
-      return c.name.toLowerCase().includes(q) ||
-             c.id.toLowerCase().includes(q) ||
-             c.department.toLowerCase().includes(q) ||
-             c.role.toLowerCase().includes(q);
+      return s.name.toLowerCase().includes(q) ||
+             String(s.rollNo).toLowerCase().includes(q) ||
+             s.fatherName.toLowerCase().includes(q) ||
+             s.courseName.toLowerCase().includes(q) ||
+             s.batchTime.toLowerCase().includes(q);
     });
 
     if (filtered.length === 0) {
       candidatesDirectoryList.innerHTML = `
         <div class="text-center py-10 text-slate-400 text-xs bg-white border border-slate-200 rounded-3xl shadow-sm">
-          No candidates match "${escapeHtml(candidateSearchQuery)}"
+          No students match "${escapeHtml(candidateSearchQuery)}"
         </div>
       `;
       return;
     }
 
-    candidatesDirectoryList.innerHTML = filtered.map(c => {
-      const history = window.attendanceStore.getCandidateAttendanceHistory(c.id);
+    candidatesDirectoryList.innerHTML = filtered.map(s => {
+      const history = window.attendanceStore.getCandidateAttendanceHistory(s.rollNo);
       const totalDays = history.length;
       const presentDays = history.filter(h => h.status === 'present').length;
       const rate = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 100;
 
       return `
         <div class="bg-white border border-slate-200 rounded-2xl p-3.5 flex items-center justify-between hover:border-slate-300 transition shadow-3d-card">
-          <div class="flex items-center gap-3 cursor-pointer candidate-row" data-id="${c.id}">
+          <div class="flex items-center gap-3 cursor-pointer student-row" data-roll="${s.rollNo}">
             <div class="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-2xl overflow-hidden shrink-0 shadow-sm">
-              ${renderAvatar(c)}
+              ${renderAvatar(s)}
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <h4 class="font-bold text-sm text-slate-900">${escapeHtml(c.name)}</h4>
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-indigo-700 font-mono font-bold">${c.id}</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 font-mono font-black">Roll: ${s.rollNo}</span>
+                <h4 class="font-extrabold text-sm text-slate-900">${escapeHtml(s.name)}</h4>
               </div>
-              <p class="text-xs text-slate-500">${escapeHtml(c.role)} • <span class="text-indigo-600 font-semibold">${escapeHtml(c.department)}</span></p>
-              <div class="flex items-center gap-3 mt-1 text-[11px] text-slate-500">
-                <span>📞 ${escapeHtml(c.phone || 'No phone')}</span>
+              <p class="text-xs text-slate-600 font-semibold mt-0.5">👨 S/o ${escapeHtml(s.fatherName)}</p>
+              <div class="flex items-center gap-2 mt-1 text-[11px] text-slate-500">
+                <span>📞 ${escapeHtml(s.contactNo || 'No phone')}</span>
                 <span>•</span>
                 <span class="text-emerald-700 font-bold">${rate}% attendance</span>
               </div>
@@ -591,10 +662,10 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
 
           <div class="flex items-center gap-1.5">
-            <button class="btn-open-id-card p-2.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-sm" data-id="${c.id}" title="3D Digital ID Badge">
-              <i data-lucide="qr-code" class="w-4 h-4"></i>
+            <button class="btn-view-student-log p-2.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-sm" data-roll="${s.rollNo}" title="View Individual History">
+              <i data-lucide="calendar-search" class="w-4 h-4"></i>
             </button>
-            <button class="btn-delete-candidate p-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 shadow-sm" data-id="${c.id}" title="Delete Candidate">
+            <button class="btn-delete-candidate p-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 shadow-sm" data-roll="${s.rollNo}" title="Delete Student">
               <i data-lucide="trash" class="w-4 h-4"></i>
             </button>
           </div>
@@ -602,49 +673,221 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
     }).join('');
 
-    candidatesDirectoryList.querySelectorAll('.candidate-row').forEach(el => {
+    candidatesDirectoryList.querySelectorAll('.student-row').forEach(el => {
       el.addEventListener('click', () => {
-        const id = el.getAttribute('data-id');
-        openCandidateDetailModal(id);
+        const roll = el.getAttribute('data-roll');
+        openCandidateDetailModal(roll);
       });
     });
 
-    candidatesDirectoryList.querySelectorAll('.btn-open-id-card').forEach(el => {
+    candidatesDirectoryList.querySelectorAll('.btn-view-student-log').forEach(el => {
       el.addEventListener('click', (e) => {
         e.stopPropagation();
-        const id = el.getAttribute('data-id');
-        open3DIdBadgeModal(id);
+        const roll = el.getAttribute('data-roll');
+        selectedStudentRollNo = roll;
+        // Switch to Student History Tab
+        document.querySelector('.dock-item[data-tab="tab-student-history"]').click();
       });
     });
 
     candidatesDirectoryList.querySelectorAll('.btn-delete-candidate').forEach(el => {
       el.addEventListener('click', (e) => {
         e.stopPropagation();
-        const id = el.getAttribute('data-id');
-        const candidate = window.attendanceStore.getCandidateById(id);
-        if (confirm(`Are you sure you want to remove ${candidate?.name || 'this candidate'}?`)) {
-          window.attendanceStore.deleteCandidate(id);
-          showToast(`Candidate removed`, 'trash-2');
+        const roll = el.getAttribute('data-roll');
+        const s = window.attendanceStore.getStudentByRollNo(roll);
+        if (confirm(`Remove student ${s?.name || ''} (Roll: ${roll})?`)) {
+          window.attendanceStore.deleteStudent(roll);
+          showToast(`Student removed`, 'trash-2');
         }
       });
     });
   }
 
+  // ----------------------------------------------------
+  // Dedicated Individual Student History View Engine
+  // ----------------------------------------------------
+  function renderStudentHistoryDropdown() {
+    const students = window.attendanceStore.getStudents();
+    if (students.length === 0) {
+      historyStudentSelect.innerHTML = `<option value="">No students registered</option>`;
+      return;
+    }
+
+    if (!selectedStudentRollNo || !students.some(s => String(s.rollNo) === String(selectedStudentRollNo))) {
+      selectedStudentRollNo = students[0].rollNo;
+    }
+
+    historyStudentSelect.innerHTML = students.map(s => `
+      <option value="${s.rollNo}" ${String(s.rollNo) === String(selectedStudentRollNo) ? 'selected' : ''}>
+        Roll ${s.rollNo}: ${s.name} (S/o ${s.fatherName}) - ${s.courseName}
+      </option>
+    `).join('');
+  }
+
+  function renderIndividualStudentHistory() {
+    const student = window.attendanceStore.getStudentByRollNo(selectedStudentRollNo);
+    if (!student) {
+      historyStudentCard.innerHTML = `<p class="text-xs text-slate-500 text-center py-4">Please select a student to view attendance history.</p>`;
+      individualHistoryContent.innerHTML = '';
+      return;
+    }
+
+    // Clean Phone number for WhatsApp & Call
+    const rawPhone = student.contactNo.replace(/[^0-9]/g, '');
+
+    // 1. Header Card
+    historyStudentCard.innerHTML = `
+      <div class="flex items-center gap-3.5">
+        <div class="w-16 h-16 rounded-2xl bg-white border-2 border-indigo-200 overflow-hidden shrink-0 shadow-sm flex items-center justify-center text-3xl">
+          ${renderAvatar(student)}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-600 text-white font-mono font-bold">Roll: ${student.rollNo}</span>
+            <h3 class="text-base font-extrabold text-slate-900 truncate">${escapeHtml(student.name)}</h3>
+          </div>
+          <p class="text-xs font-bold text-slate-700 mt-0.5">👨 Father: ${escapeHtml(student.fatherName)}</p>
+          <p class="text-[11px] text-slate-500 truncate">${escapeHtml(student.courseName)} • ${escapeHtml(student.batchTime.split('(')[0])}</p>
+        </div>
+      </div>
+
+      <!-- Quick Action Buttons: Call & WhatsApp Parent -->
+      <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-indigo-100">
+        <a href="tel:${student.contactNo}" class="py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm">
+          <i data-lucide="phone-call" class="w-3.5 h-3.5 text-emerald-600"></i> Call Parent
+        </a>
+        <a href="https://wa.me/${rawPhone}?text=Hello%2C%20Attendance%20Report%20for%20${encodeURIComponent(student.name)}%20(Roll%20${student.rollNo})" target="_blank" class="py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm">
+          <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> WhatsApp Parent
+        </a>
+      </div>
+    `;
+
+    // 2. Timeline Breakdown (Weekly vs Monthly)
+    if (historyViewMode === 'weekly') {
+      const weekly = window.attendanceStore.getStudentHistoryWeekly(student.rollNo, currentDate);
+      
+      individualHistoryContent.innerHTML = `
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-700">Week: ${weekly.weekRange}</span>
+            <span class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">${weekly.rate}% Rate</span>
+          </div>
+
+          <div class="grid grid-cols-4 gap-2 text-center mb-4">
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
+              <span class="block text-indigo-700 font-extrabold text-sm">${weekly.totalClasses}</span>
+              <span class="text-[9px] text-slate-500 uppercase font-bold">Classes</span>
+            </div>
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
+              <span class="block text-emerald-600 font-extrabold text-sm">${weekly.present}</span>
+              <span class="text-[9px] text-slate-500 uppercase font-bold">Present</span>
+            </div>
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
+              <span class="block text-rose-600 font-extrabold text-sm">${weekly.absent}</span>
+              <span class="text-[9px] text-slate-500 uppercase font-bold">Absent</span>
+            </div>
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
+              <span class="block text-amber-600 font-extrabold text-sm">${weekly.leave}</span>
+              <span class="text-[9px] text-slate-500 uppercase font-bold">Leave</span>
+            </div>
+          </div>
+
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5">Weekly Day Log</h4>
+          <div class="space-y-2">
+            ${weekly.logs.map(log => `
+              <div class="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+                <div class="flex items-center gap-2">
+                  <span class="w-10 font-bold text-slate-700">${log.dayName}</span>
+                  <span class="text-slate-500 font-mono text-[11px]">${log.date}</span>
+                </div>
+                <div>
+                  ${renderStatusBadge(log.status)}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    } else {
+      // Monthly View Matrix
+      const currentYearMonth = currentDate.substring(0, 7); // 'YYYY-MM'
+      const monthly = window.attendanceStore.getStudentHistoryMonthly(student.rollNo, currentYearMonth);
+
+      individualHistoryContent.innerHTML = `
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-900">Month: ${monthly.monthName}</span>
+            <span class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">${monthly.rate}% Attendance</span>
+          </div>
+
+          <div class="grid grid-cols-4 gap-2 text-center mb-4">
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
+              <span class="block text-indigo-700 font-extrabold text-sm">${monthly.totalClasses}</span>
+              <span class="text-[9px] text-slate-500 uppercase font-bold">Held</span>
+            </div>
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
+              <span class="block text-emerald-600 font-extrabold text-sm">${monthly.present}</span>
+              <span class="text-[9px] text-slate-500 uppercase font-bold">Present</span>
+            </div>
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
+              <span class="block text-rose-600 font-extrabold text-sm">${monthly.absent}</span>
+              <span class="text-[9px] text-slate-500 uppercase font-bold">Absent</span>
+            </div>
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
+              <span class="block text-amber-600 font-extrabold text-sm">${monthly.leave}</span>
+              <span class="text-[9px] text-slate-500 uppercase font-bold">Leave</span>
+            </div>
+          </div>
+
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Monthly Matrix (Day 1 - 31)</h4>
+          <div class="history-month-grid mb-4">
+            ${monthly.logs.map(log => {
+              let cellClass = 'day-unmarked';
+              let char = '·';
+              if (log.status === 'present') { cellClass = 'day-present'; char = 'P'; }
+              else if (log.status === 'absent') { cellClass = 'day-absent'; char = 'A'; }
+              else if (log.status === 'leave') { cellClass = 'day-leave'; char = 'L'; }
+
+              return `
+                <div class="history-day-cell ${cellClass}" title="${log.date}: ${log.status.toUpperCase()}">
+                  <span class="text-[10px] leading-tight">${log.day}</span>
+                  <span class="text-[8px] font-black">${char}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Present</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> Absent</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> Leave</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block"></span> Unmarked</span>
+          </div>
+        </div>
+      `;
+    }
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // ----------------------------------------------------
+  // Date-wise Logs
+  // ----------------------------------------------------
   function renderHistory() {
     historySummaryDate.textContent = formatDateHuman(historyDate);
     const stats = window.attendanceStore.getStatsForDate(historyDate);
     const attendanceMap = window.attendanceStore.getAttendanceForDate(historyDate);
-    const candidates = window.attendanceStore.getCandidates();
+    const students = window.attendanceStore.getStudents();
 
     histPresent.textContent = stats.present;
     histAbsent.textContent = stats.absent;
     histLeave.textContent = stats.leave;
     historySummaryRate.textContent = `${stats.rate}% Rate`;
 
-    const records = candidates.map(c => {
+    const records = students.map(s => {
       return {
-        ...c,
-        status: attendanceMap[c.id] || 'unmarked'
+        ...s,
+        status: attendanceMap[s.rollNo] || 'unmarked'
       };
     }).filter(item => {
       if (historyStatusFilter === 'all') return true;
@@ -654,7 +897,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (records.length === 0) {
       historyRecordsList.innerHTML = `
         <div class="text-center py-8 text-slate-400 text-xs bg-white border border-slate-200 rounded-2xl shadow-sm">
-          No records matching the selected status for this date.
+          No records matching selected status for this date.
         </div>
       `;
       return;
@@ -663,12 +906,12 @@ document.addEventListener('DOMContentLoaded', () => {
     historyRecordsList.innerHTML = records.map(r => `
       <div class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-2xl shadow-sm">
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-base overflow-hidden shrink-0 shadow-sm">
+          <div class="w-10 h-10 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-base overflow-hidden shrink-0 shadow-sm">
             ${renderAvatar(r)}
           </div>
           <div>
-            <p class="text-xs font-bold text-slate-900">${escapeHtml(r.name)} <span class="text-[10px] text-slate-400 font-mono font-normal">(${r.id})</span></p>
-            <p class="text-[11px] text-slate-500">${escapeHtml(r.department)}</p>
+            <p class="text-xs font-bold text-slate-900">Roll ${r.rollNo}: ${escapeHtml(r.name)} <span class="text-[10px] text-slate-500 font-normal">(S/o ${escapeHtml(r.fatherName)})</span></p>
+            <p class="text-[11px] text-slate-500">${escapeHtml(r.courseName)} • ${escapeHtml(r.batchTime.split('(')[0])}</p>
           </div>
         </div>
         <div>
@@ -679,13 +922,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----------------------------------------------------
-  // Candidate Detail Profile Modal
+  // Student Detail Profile Modal
   // ----------------------------------------------------
-  function openCandidateDetailModal(candidateId) {
-    const candidate = window.attendanceStore.getCandidateById(candidateId);
-    if (!candidate) return;
+  function openCandidateDetailModal(rollNo) {
+    const student = window.attendanceStore.getStudentByRollNo(rollNo);
+    if (!student) return;
 
-    const history = window.attendanceStore.getCandidateAttendanceHistory(candidateId);
+    const history = window.attendanceStore.getCandidateAttendanceHistory(student.rollNo);
     const totalDays = history.length;
     const presentCount = history.filter(h => h.status === 'present').length;
     const absentCount = history.filter(h => h.status === 'absent').length;
@@ -695,11 +938,11 @@ document.addEventListener('DOMContentLoaded', () => {
     candidateProfileContent.innerHTML = `
       <div class="text-center pb-3 border-b border-slate-200">
         <div class="w-20 h-20 rounded-3xl bg-indigo-50 border-2 border-indigo-200 flex items-center justify-center text-3xl mx-auto mb-2 shadow-md overflow-hidden">
-          ${renderAvatar(candidate)}
+          ${renderAvatar(student)}
         </div>
-        <h3 class="text-lg font-extrabold text-slate-900">${escapeHtml(candidate.name)}</h3>
-        <p class="text-xs text-indigo-700 font-semibold">${escapeHtml(candidate.role)} • <span class="text-slate-500">${escapeHtml(candidate.department)}</span></p>
-        <span class="inline-block mt-1 text-[11px] px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-mono font-bold border border-slate-200">${candidate.id}</span>
+        <h3 class="text-lg font-extrabold text-slate-900">${escapeHtml(student.name)}</h3>
+        <p class="text-xs font-bold text-indigo-700">👨 Father's Name: ${escapeHtml(student.fatherName)}</p>
+        <span class="inline-block mt-1 text-[11px] px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 font-mono font-bold border border-slate-200">Roll No: ${student.rollNo}</span>
       </div>
 
       <div class="grid grid-cols-4 gap-2 text-center my-3">
@@ -721,41 +964,44 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       </div>
 
-      <button class="btn-profile-id-badge w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition active:scale-95 shadow-sm">
-        <i data-lucide="qr-code" class="w-4 h-4"></i> View 3D Digital ID Card & QR Badge
-      </button>
-
       <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2 text-xs">
         <div class="flex items-center justify-between text-slate-700">
-          <span class="text-slate-500 font-medium">Email:</span>
-          <span>${escapeHtml(candidate.email || 'Not provided')}</span>
+          <span class="text-slate-500 font-medium">Course:</span>
+          <span class="font-bold text-indigo-700">${escapeHtml(student.courseName)}</span>
         </div>
         <div class="flex items-center justify-between text-slate-700">
-          <span class="text-slate-500 font-medium">Phone:</span>
-          <span>${escapeHtml(candidate.phone || 'Not provided')}</span>
+          <span class="text-slate-500 font-medium">Batch:</span>
+          <span class="font-bold">${escapeHtml(student.batchTime)}</span>
         </div>
         <div class="flex items-center justify-between text-slate-700">
-          <span class="text-slate-500 font-medium">Enrolled:</span>
-          <span>${candidate.createdAt || 'August 2026'}</span>
+          <span class="text-slate-500 font-medium">Contact No:</span>
+          <span>${escapeHtml(student.contactNo || 'Not provided')}</span>
+        </div>
+        <div class="flex items-center justify-between text-slate-700">
+          <span class="text-slate-500 font-medium">Address:</span>
+          <span>${escapeHtml(student.address || 'Not provided')}</span>
         </div>
       </div>
 
-      <div>
-        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Recent Attendance Logs</h4>
-        <div class="max-h-44 overflow-y-auto space-y-2 pr-1">
-          ${history.length > 0 ? history.map(h => `
-            <div class="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-2xl text-xs shadow-sm">
-              <span class="font-medium text-slate-700">${formatDateHuman(h.date)}</span>
-              ${renderStatusBadge(h.status)}
-            </div>
-          `).join('') : '<p class="text-xs text-slate-400 text-center py-4">No attendance marked yet.</p>'}
-        </div>
+      <div class="flex gap-2">
+        <button class="btn-profile-id-badge flex-1 py-2.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm">
+          <i data-lucide="qr-code" class="w-4 h-4"></i> ID Card
+        </button>
+        <button class="btn-profile-open-history flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm">
+          <i data-lucide="calendar" class="w-4 h-4"></i> View Log
+        </button>
       </div>
     `;
 
     candidateProfileContent.querySelector('.btn-profile-id-badge').addEventListener('click', () => {
       modalCandidateDetail.classList.remove('open');
-      open3DIdBadgeModal(candidateId);
+      open3DIdBadgeModal(rollNo);
+    });
+
+    candidateProfileContent.querySelector('.btn-profile-open-history').addEventListener('click', () => {
+      modalCandidateDetail.classList.remove('open');
+      selectedStudentRollNo = rollNo;
+      document.querySelector('.dock-item[data-tab="tab-student-history"]').click();
     });
 
     modalCandidateDetail.classList.add('open');
@@ -765,18 +1011,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // ----------------------------------------------------
   // 3D Digital Candidate ID Badge Modal
   // ----------------------------------------------------
-  function open3DIdBadgeModal(candidateId) {
-    const candidate = window.attendanceStore.getCandidateById(candidateId);
+  function open3DIdBadgeModal(rollNo) {
+    const student = window.attendanceStore.getStudentByRollNo(rollNo);
     const settings = window.attendanceStore.getSettings();
-    if (!candidate) return;
+    if (!student) return;
 
-    // Generate dynamic QR Code SVG representation
-    const qrData = encodeURIComponent(`ATTENDEASE:${candidate.id}:${candidate.name}`);
+    const qrData = encodeURIComponent(`STUDENT:${student.rollNo}:${student.name}:${student.fatherName}`);
     const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${qrData}&color=1e1b4b`;
 
     const logoHtml = settings.orgLogoUrl ? 
       `<img src="${settings.orgLogoUrl}" class="w-8 h-8 rounded-lg object-cover">` : 
-      `<span class="text-2xl">${settings.orgLogo || '⚡'}</span>`;
+      `<span class="text-2xl">${settings.orgLogo || '🎓'}</span>`;
 
     idBadgeContainer.innerHTML = `
       <div id="printable-id-card" class="digital-id-badge">
@@ -789,30 +1034,30 @@ document.addEventListener('DOMContentLoaded', () => {
             ${logoHtml}
           </div>
           <div>
-            <h4 class="text-xs font-black text-slate-900 uppercase tracking-tight">${escapeHtml(settings.orgName || 'AttendEase Systems')}</h4>
-            <p class="text-[9px] text-slate-500 font-semibold">${escapeHtml(settings.orgBranch || 'Campus HQ')} • Official ID</p>
+            <h4 class="text-xs font-black text-slate-900 uppercase tracking-tight">${escapeHtml(settings.orgName || 'Apex Coaching Institute')}</h4>
+            <p class="text-[9px] text-slate-500 font-semibold">${escapeHtml(settings.orgBranch || 'Campus HQ')} • Student ID</p>
           </div>
         </div>
 
-        <!-- Candidate Photo & Details -->
+        <!-- Student Photo & Details -->
         <div class="flex items-center gap-4 mb-3.5">
           <div class="w-20 h-20 rounded-2xl bg-white border-2 border-indigo-200 overflow-hidden shadow-md shrink-0 flex items-center justify-center text-3xl">
-            ${renderAvatar(candidate)}
+            ${renderAvatar(student)}
           </div>
           <div class="flex-1 min-w-0">
-            <span class="text-[9px] font-mono font-extrabold px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">${candidate.id}</span>
-            <h3 class="text-base font-extrabold text-slate-900 truncate mt-1">${escapeHtml(candidate.name)}</h3>
-            <p class="text-xs text-indigo-700 font-bold truncate">${escapeHtml(candidate.role)}</p>
-            <p class="text-[11px] text-slate-500">${escapeHtml(candidate.department)}</p>
+            <span class="text-[9px] font-mono font-black px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">Roll: ${student.rollNo}</span>
+            <h3 class="text-base font-extrabold text-slate-900 truncate mt-1">${escapeHtml(student.name)}</h3>
+            <p class="text-xs text-slate-700 font-bold truncate">👨 S/o ${escapeHtml(student.fatherName)}</p>
+            <p class="text-[11px] text-indigo-600 font-bold truncate">${escapeHtml(student.courseName)}</p>
           </div>
         </div>
 
-        <!-- QR Code & Barcode Section -->
+        <!-- QR Code -->
         <div class="flex items-center justify-between bg-white border border-slate-200 rounded-2xl p-3 shadow-inner">
           <div>
-            <span class="text-[9px] uppercase font-bold text-slate-400 block mb-0.5">Scan for Attendance</span>
-            <p class="text-[10px] text-slate-700 font-mono font-bold">STATUS: AUTHORIZED</p>
-            <p class="text-[9px] text-emerald-600 font-bold mt-1">✓ VALID 2026-2027</p>
+            <span class="text-[9px] uppercase font-bold text-slate-400 block mb-0.5">Attendance QR Pass</span>
+            <p class="text-[10px] text-slate-700 font-mono font-bold">BATCH: ${escapeHtml(student.batchTime.split('(')[0])}</p>
+            <p class="text-[9px] text-emerald-600 font-bold mt-1">✓ ENROLLED 2026-2027</p>
           </div>
           <div class="w-16 h-16 rounded-xl bg-slate-50 border border-slate-200 p-1 flex items-center justify-center">
             <img src="${qrImgUrl}" alt="QR" class="w-full h-full object-contain">
@@ -826,11 +1071,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----------------------------------------------------
-  // Photo & Logo Compression Engines
+  // Photo Processing
   // ----------------------------------------------------
   function processCandidatePhoto(file) {
     if (!file || !file.type.startsWith('image/')) {
-      showToast('Please select a valid image file', 'alert-circle');
+      showToast('Please select an image file', 'alert-circle');
       return;
     }
 
@@ -868,7 +1113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnRemovePhoto.classList.remove('hidden');
         candidatePhotoData.value = compressedDataUrl;
 
-        showToast('Candidate photo attached!', 'image');
+        showToast('Student photo attached!', 'image');
       };
       img.src = e.target.result;
     };
@@ -877,7 +1122,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function processOrgLogo(file) {
     if (!file || !file.type.startsWith('image/')) {
-      showToast('Please select a valid image file', 'alert-circle');
+      showToast('Please select an image file', 'alert-circle');
       return;
     }
 
@@ -909,7 +1154,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const logoDataUrl = canvas.toDataURL('image/png');
         window.attendanceStore.updateOrgLogo(logoDataUrl);
-        showToast('Organization Logo updated!', 'sparkles');
+        showToast('Institute Logo updated!', 'sparkles');
       };
       img.src = e.target.result;
     };
@@ -938,6 +1183,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
       }
     });
+
+    // Quick 1-Click Demo Login Bypass
+    const btnQuickBypassLogin = document.getElementById('btn-quick-bypass-login');
+    if (btnQuickBypassLogin) {
+      btnQuickBypassLogin.addEventListener('click', () => {
+        window.attendanceStore.loginAdmin('admin', 'admin123');
+        adminLockscreen.classList.add('hidden');
+        playTactileClick();
+        showToast('Dashboard Unlocked!', 'sparkles');
+      });
+    }
 
     // Admin Logout
     const handleLogout = () => {
@@ -988,22 +1244,45 @@ document.addEventListener('DOMContentLoaded', () => {
     attendanceSearch.addEventListener('input', (e) => {
       searchQuery = e.target.value;
       renderAttendanceList();
+      renderStats();
     });
 
     // Mark All Present
     btnMarkAllPresent.addEventListener('click', () => {
       playTactileClick();
-      window.attendanceStore.markAllAttendance(currentDate, 'present');
-      showToast('All candidates marked Present!', 'check-check');
+      const filtered = getFilteredStudents();
+      window.attendanceStore.markAllAttendance(currentDate, 'present', filtered);
+      showToast('Filtered students marked Present!', 'check-check');
     });
 
-    // Candidate Directory Search
+    // Student Directory Search
     candidateDirectorySearch.addEventListener('input', (e) => {
       candidateSearchQuery = e.target.value;
       renderCandidatesDirectory();
     });
 
-    // Candidate Photo Upload Picker
+    // Dedicated Student History Select Change
+    historyStudentSelect.addEventListener('change', (e) => {
+      selectedStudentRollNo = e.target.value;
+      renderIndividualStudentHistory();
+    });
+
+    // Weekly vs Monthly Toggle Buttons
+    btnViewWeekly.addEventListener('click', () => {
+      historyViewMode = 'weekly';
+      btnViewWeekly.className = 'flex-1 py-2 rounded-xl text-xs font-extrabold transition bg-white text-indigo-700 shadow-sm';
+      btnViewMonthly.className = 'flex-1 py-2 rounded-xl text-xs font-extrabold transition text-slate-600 hover:text-slate-900';
+      renderIndividualStudentHistory();
+    });
+
+    btnViewMonthly.addEventListener('click', () => {
+      historyViewMode = 'monthly';
+      btnViewMonthly.className = 'flex-1 py-2 rounded-xl text-xs font-extrabold transition bg-white text-indigo-700 shadow-sm';
+      btnViewWeekly.className = 'flex-1 py-2 rounded-xl text-xs font-extrabold transition text-slate-600 hover:text-slate-900';
+      renderIndividualStudentHistory();
+    });
+
+    // Photo Upload Picker
     candidatePhotoFile.addEventListener('change', (e) => {
       if (e.target.files && e.target.files[0]) {
         processCandidatePhoto(e.target.files[0]);
@@ -1019,7 +1298,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnRemovePhoto.classList.add('hidden');
     });
 
-    // Organization Logo Upload Picker
+    // Org Logo Upload
     inputOrgLogoFile.addEventListener('change', (e) => {
       if (e.target.files && e.target.files[0]) {
         processOrgLogo(e.target.files[0]);
@@ -1032,7 +1311,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('Reset to default logo icon', 'rotate-ccw');
     });
 
-    // Open Add Candidate Modal
+    // Open Add Student Modal
     const openAddCandidateModal = () => {
       formAddCandidate.reset();
       candidatePhotoData.value = '';
@@ -1040,15 +1319,15 @@ document.addEventListener('DOMContentLoaded', () => {
       photoPreviewImg.classList.add('hidden');
       photoPreviewEmoji.classList.remove('hidden');
       btnRemovePhoto.classList.add('hidden');
-      candidateAvatarInput.value = '👨‍💻';
 
-      avatarOptions.forEach((btn, idx) => {
-        if (idx === 0) {
-          btn.className = 'avatar-option active w-9 h-9 rounded-2xl bg-indigo-50 border-2 border-indigo-600 text-lg flex items-center justify-center shadow-sm';
-        } else {
-          btn.className = 'avatar-option w-9 h-9 rounded-2xl bg-slate-100 border border-slate-200 text-lg flex items-center justify-center';
-        }
-      });
+      // Auto-suggest next roll number
+      const students = window.attendanceStore.getStudents();
+      const maxRoll = students.reduce((max, s) => {
+        const num = parseInt(s.rollNo, 10);
+        return (!isNaN(num) && num > max) ? num : max;
+      }, 100);
+      studentRollNo.value = String(maxRoll + 1);
+
       modalAddCandidate.classList.add('open');
     };
 
@@ -1064,50 +1343,42 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target === modalAddCandidate) modalAddCandidate.classList.remove('open');
     });
 
-    avatarOptions.forEach(btn => {
-      btn.addEventListener('click', () => {
-        avatarOptions.forEach(b => {
-          b.className = 'avatar-option w-9 h-9 rounded-2xl bg-slate-100 border border-slate-200 text-lg flex items-center justify-center';
-        });
-        btn.className = 'avatar-option active w-9 h-9 rounded-2xl bg-indigo-50 border-2 border-indigo-600 text-lg flex items-center justify-center shadow-sm';
-        const emoji = btn.getAttribute('data-emoji');
-        candidateAvatarInput.value = emoji;
-        if (!candidatePhotoData.value) {
-          photoPreviewEmoji.textContent = emoji;
-        }
-      });
-    });
-
+    // Form Add Student Submit
     formAddCandidate.addEventListener('submit', (e) => {
       e.preventDefault();
-      const name = document.getElementById('candidate-name').value;
-      const id = document.getElementById('candidate-id').value;
-      const department = document.getElementById('candidate-dept').value;
-      const role = document.getElementById('candidate-role').value;
-      const phone = document.getElementById('candidate-phone').value;
-      const email = document.getElementById('candidate-email').value;
+      const roll = studentRollNo.value.trim();
+      const name = studentName.value.trim();
+      const fatherName = studentFatherName.value.trim();
+      const contactNo = studentContactNo.value.trim();
+      const email = studentEmail.value.trim();
+      const courseName = studentCourse.value;
+      const batchTime = studentBatch.value;
+      const address = studentAddress.value.trim();
       const photoUrl = candidatePhotoData.value || null;
-      const avatar = candidateAvatarInput.value || '👤';
 
-      if (!name) return;
+      if (!name || !fatherName || !contactNo) {
+        alert('Please fill Student Name, Father Name, and Contact Number.');
+        return;
+      }
 
-      const newCand = window.attendanceStore.addCandidate({
+      const newStudent = window.attendanceStore.addStudent({
+        rollNo: roll,
         name,
-        id,
-        department,
-        role: role || `${department} Member`,
-        phone,
+        fatherName,
+        contactNo,
         email,
-        avatar,
+        courseName,
+        batchTime,
+        address,
         photoUrl
       });
 
       modalAddCandidate.classList.remove('open');
       playTactileClick();
-      showToast(`Registered ${newCand.name}`, 'user-check');
+      showToast(`Enrolled ${newStudent.name} (Roll: ${newStudent.rollNo})`, 'user-check');
     });
 
-    // Candidate Detail Modal Close
+    // Close Detail Modal
     btnCloseDetailModal.addEventListener('click', () => {
       modalCandidateDetail.classList.remove('open');
     });
@@ -1115,7 +1386,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target === modalCandidateDetail) modalCandidateDetail.classList.remove('open');
     });
 
-    // 3D Digital ID Badge Modal Close & Print
+    // Close ID Badge Modal
     btnCloseIdBadge.addEventListener('click', () => {
       modalIdBadge.classList.remove('open');
     });
@@ -1158,18 +1429,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Save Branding
     btnSaveBranding.addEventListener('click', () => {
-      const name = settingOrgName.value || 'AttendEase Systems';
-      const branch = settingOrgBranch.value || 'HQ';
+      const name = settingOrgName.value || 'Apex Coaching Institute';
+      const branch = settingOrgBranch.value || 'Main Campus';
 
       window.attendanceStore.updateSettings({
         orgName: name,
         orgBranch: branch
       });
 
-      showToast('Branding updated!', 'check');
+      showToast('Institute Details updated!', 'check');
     });
 
-    // Add Department Modal
+    // Add Course Modal
     btnOpenAddDept.addEventListener('click', () => {
       formAddDept.reset();
       modalAddDept.classList.add('open');
@@ -1187,55 +1458,10 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const val = inputNewDeptName.value;
       if (val) {
-        window.attendanceStore.addDepartment(val);
+        window.attendanceStore.addCourse(val);
         modalAddDept.classList.remove('open');
-        showToast(`Department "${val}" added!`, 'plus');
+        showToast(`Course "${val}" added!`, 'plus');
       }
-    });
-
-    // Update Cloud Room ID
-    btnUpdateRoomId.addEventListener('click', () => {
-      const room = inputCloudRoomId.value;
-      if (room) {
-        window.attendanceStore.setCloudRoomId(room);
-        showToast(`Connected to Cloud Room: ${room}`, 'cloud');
-      }
-    });
-
-    // PWA Install Trigger
-    btnTriggerPwaInstall.addEventListener('click', async () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const choice = await deferredPrompt.userChoice;
-        if (choice.outcome === 'accepted') {
-          showToast('AttendEase installed successfully!', 'sparkles');
-        }
-        deferredPrompt = null;
-      } else {
-        showToast('To install: Open browser menu and tap "Add to Home Screen"', 'smartphone');
-      }
-    });
-
-    // Deployment Guides
-    btnDeployVercelGuide.addEventListener('click', () => {
-      showDeploymentGuide('Vercel / Netlify Live Hosting', `
-1. Push this project folder to a GitHub repository.
-2. Go to vercel.com or netlify.com and click "New Project".
-3. Select your repository and hit Deploy.
-4. You will get a live URL to share with all staff!
-      `);
-    });
-
-    btnDeployCpanelGuide.addEventListener('click', () => {
-      showDeploymentGuide('cPanel / Apache PHP Hosting', `
-1. Zip this project folder.
-2. Upload and extract to public_html in cPanel File Manager.
-3. In Step 2, configure MySQL and connect all devices to the same backend.
-      `);
-    });
-
-    btnDownloadDeployBundle.addEventListener('click', () => {
-      downloadDeploymentReadme();
     });
 
     // Backup & Restore
@@ -1245,10 +1471,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `AttendEase_Backup_${getTodayDateStr()}.json`;
+      link.download = `Coaching_Attendance_Backup_${getTodayDateStr()}.json`;
       link.click();
       URL.revokeObjectURL(url);
-      showToast('Backup JSON downloaded', 'file-down');
+      showToast('Full backup JSON downloaded', 'file-down');
     });
 
     inputImportBackup.addEventListener('change', (e) => {
@@ -1258,7 +1484,7 @@ document.addEventListener('DOMContentLoaded', () => {
       reader.onload = (event) => {
         const res = window.attendanceStore.importFullDataJSON(event.target.result);
         if (res.success) {
-          showToast('Backup restored successfully!', 'check-circle');
+          showToast('Coaching records restored successfully!', 'check-circle');
         } else {
           showToast('Failed to import backup: ' + res.error, 'alert-triangle');
         }
@@ -1269,9 +1495,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Reset Data
     const handleReset = () => {
       localStorage.clear();
-      window.attendanceStore.init();
-      window.attendanceStore.notify();
-      showToast('Data reset to defaults', 'rotate-ccw');
+      window.location.reload();
     };
     resetDataBtn.addEventListener('click', handleReset);
 
@@ -1293,8 +1517,30 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----------------------------------------------------
-  // Utility & Feedback
+  // CSV Export with Strict Coaching Fields
   // ----------------------------------------------------
+  function exportAttendanceCSV(dateStr) {
+    const students = window.attendanceStore.getStudents();
+    const attendanceMap = window.attendanceStore.getAttendanceForDate(dateStr);
+
+    let csv = 'Roll No,Student Name,Father Name,Contact No,Address,Batch Time,Course Name,Date,Status\n';
+    students.forEach(s => {
+      const status = (attendanceMap[s.rollNo] || 'unmarked').toUpperCase();
+      csv += `"${s.rollNo}","${s.name}","${s.fatherName}","${s.contactNo}","${s.address}","${s.batchTime}","${s.courseName}","${dateStr}","${status}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Coaching_Attendance_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast(`Exported attendance for ${dateStr}`, 'file-check');
+  }
+
   function showToast(message, icon = 'info') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
@@ -1308,40 +1554,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2600);
   }
 
-  function showDeploymentGuide(title, steps) {
-    alert(`${title}\n\n${steps}`);
-  }
-
-  function downloadDeploymentReadme() {
-    const content = `# AttendEase - Online Deployment Instructions
-
-## How Anyone in the World Can Use This App & See the Same Data
-
-### Method 1: 1-Click Free Hosting (Vercel / Netlify / GitHub Pages)
-1. Push this folder to a GitHub repository.
-2. Connect the repository on https://vercel.com or https://netlify.com.
-3. Click **Deploy**.
-4. You receive a public live URL (e.g. \`https://attendease-app.vercel.app\`).
-5. Share this URL with your teachers, managers, or staff members.
-
-### Method 2: Multi-Device Shared Database
-- When multiple phones open your deployed URL and enter the same **Cloud Room ID**, all candidate registrations, photos, and attendance logs are shared in real-time.
-
-### Method 3: Mobile Home Screen App (PWA)
-- Open the live link on Safari (iPhone) or Chrome (Android).
-- Tap the **Share/Menu** icon and select **Add to Home Screen**.
-- The app will run like a native mobile app without needing app store downloads!
-`;
-    const blob = new Blob([content], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `HOW_TO_DEPLOY_ONLINE.md`;
-    link.click();
-    URL.revokeObjectURL(url);
-    showToast('Deployment guide downloaded', 'file-down');
-  }
-
   function escapeHtml(str) {
     if (!str) return '';
     return String(str)
@@ -1350,28 +1562,6 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
-  }
-
-  function exportAttendanceCSV(dateStr) {
-    const candidates = window.attendanceStore.getCandidates();
-    const attendanceMap = window.attendanceStore.getAttendanceForDate(dateStr);
-
-    let csv = 'Candidate ID,Full Name,Department,Designation,Phone,Email,Date,Status\n';
-    candidates.forEach(c => {
-      const status = (attendanceMap[c.id] || 'unmarked').toUpperCase();
-      csv += `"${c.id}","${c.name}","${c.department}","${c.role}","${c.phone}","${c.email}","${dateStr}","${status}"\n`;
-    });
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `Attendance_Report_${dateStr}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    showToast(`Exported report for ${dateStr}`, 'file-check');
   }
 
   if ('serviceWorker' in navigator) {

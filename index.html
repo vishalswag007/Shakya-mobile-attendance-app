@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f8fafc">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <title>AttendEase • 3D Mobile Attendance</title>
+  <title>Apex Coaching • Smart Student Attendance</title>
   
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/app.css">
@@ -40,20 +40,20 @@
       <div class="admin-login-card">
         
         <div id="login-logo-container" class="brand-logo-frame mx-auto mb-3 w-16 h-16 rounded-2xl shadow-lg border-2 border-indigo-200">
-          <span id="login-logo-emoji" class="text-3xl">⚡</span>
-          <img id="login-logo-img" src="" alt="Organization Logo" class="hidden w-full h-full object-cover">
+          <span id="login-logo-emoji" class="text-3xl">🎓</span>
+          <img id="login-logo-img" src="" alt="Institute Logo" class="hidden w-full h-full object-cover">
         </div>
         
-        <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">AttendEase 3D</h2>
-        <p class="text-xs text-slate-500 font-medium mb-4">Administrator Authentication</p>
+        <h2 class="text-xl font-black text-slate-900 tracking-tight">Apex Coaching</h2>
+        <p class="text-xs text-slate-500 font-medium mb-4">Institute Attendance Portal</p>
 
         <!-- Credentials Hint Pill -->
-        <div class="p-2.5 rounded-2xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800 text-left mb-4 flex items-start gap-2 shadow-sm">
-          <i data-lucide="key" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+        <div class="p-2.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-[11px] text-indigo-900 text-left mb-4 flex items-start gap-2 shadow-sm">
+          <i data-lucide="shield-check" class="w-4 h-4 text-indigo-600 shrink-0 mt-0.5"></i>
           <div>
-            <span class="font-bold">Default Admin Login:</span><br>
-            User: <code class="font-mono font-bold text-slate-900 bg-white px-1 py-0.5 rounded border border-amber-300">admin</code> | 
-            Pass: <code class="font-mono font-bold text-slate-900 bg-white px-1 py-0.5 rounded border border-amber-300">admin123</code>
+            <span class="font-bold">Admin Credentials:</span><br>
+            User: <code class="font-mono font-bold text-slate-900 bg-white px-1 py-0.5 rounded border border-indigo-300">admin</code> | 
+            Pass: <code class="font-mono font-bold text-slate-900 bg-white px-1 py-0.5 rounded border border-indigo-300">admin123</code>
           </div>
         </div>
 
@@ -77,11 +77,15 @@
           <p id="login-error-msg" class="text-xs font-bold text-rose-600 hidden"></p>
 
           <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl text-sm shadow-md shadow-indigo-600/30 active:scale-98 transition flex items-center justify-center gap-2">
-            <i data-lucide="log-in" class="w-4 h-4"></i> Unlock App Dashboard
+            <i data-lucide="log-in" class="w-4 h-4"></i> Enter Institute Dashboard
+          </button>
+
+          <button type="button" id="btn-quick-bypass-login" class="w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold rounded-2xl text-xs active:scale-98 transition flex items-center justify-center gap-1.5 shadow-sm">
+            <i data-lucide="zap" class="w-3.5 h-3.5 text-emerald-600"></i> 1-Click Instant Enter (Demo)
           </button>
         </form>
 
-        <p class="text-[10px] text-slate-400 mt-4 font-semibold">Clean 3D Multi-User Architecture v1.4</p>
+        <p class="text-[10px] text-slate-400 mt-4 font-semibold">100+ Students Scalable Edition v2.0</p>
       </div>
     </div>
 
@@ -98,20 +102,20 @@
       </div>
     </div>
 
-    <!-- Clean 3D App Header -->
+    <!-- 3D Coaching Header -->
     <header class="app-header">
       <div class="flex items-center gap-2.5">
         <div id="header-brand-logo-frame" class="brand-logo-frame">
-          <span id="header-brand-emoji" class="text-xl">⚡</span>
+          <span id="header-brand-emoji" class="text-xl">🎓</span>
           <img id="header-brand-img" src="" alt="Logo" class="hidden w-full h-full object-cover">
         </div>
         <div>
-          <h1 id="header-org-title" class="text-xs font-extrabold leading-tight tracking-tight text-slate-900 flex items-center gap-1.5">
-            AttendEase Systems
+          <h1 id="header-org-title" class="text-xs font-black leading-tight tracking-tight text-slate-900 flex items-center gap-1.5">
+            Apex Coaching Institute
           </h1>
           <div class="flex items-center gap-1.5 mt-0.5">
-            <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">ADMIN</span>
-            <p id="header-org-subtitle" class="text-[10px] text-slate-500 font-medium">HQ Campus</p>
+            <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">COACHING</span>
+            <p id="header-org-subtitle" class="text-[10px] text-slate-500 font-medium">Main Campus</p>
           </div>
         </div>
       </div>
@@ -121,7 +125,7 @@
           <i data-lucide="calendar" class="w-4 h-4"></i>
         </button>
         <button id="btn-open-add-candidate" class="px-3 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm shadow-indigo-600/30 transition active:scale-95">
-          <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add
+          <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Add Student
         </button>
         <button id="btn-header-logout" class="p-2 rounded-2xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 transition active:scale-95" title="Admin Logout">
           <i data-lucide="log-out" class="w-4 h-4"></i>
@@ -135,6 +139,22 @@
       <!-- ================= TAB 1: ATTENDANCE DASHBOARD ================= -->
       <section id="tab-attendance" class="tab-pane active">
         
+        <!-- PROMINENT CURRENT MONTH BANNER (Client Requirement #2) -->
+        <div class="month-banner-card">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl shadow-inner">
+              📅
+            </div>
+            <div>
+              <span class="text-[10px] uppercase font-extrabold tracking-widest text-indigo-200 block">Active Attendance Month</span>
+              <h2 id="current-month-display" class="text-base font-black tracking-tight text-white">August 2026</h2>
+            </div>
+          </div>
+          <div class="text-right">
+            <span id="month-session-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-white/20 font-bold text-white border border-white/30">Session 2026-27</span>
+          </div>
+        </div>
+
         <!-- Date Selector Header Card -->
         <div class="flex items-center justify-between bg-white border border-slate-200 rounded-2xl p-2.5 mb-3.5 shadow-sm">
           <button id="date-prev" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition active:scale-90 shadow-sm">
@@ -143,7 +163,7 @@
           
           <div class="flex items-center gap-2">
             <input type="date" id="attendance-date-input" class="bg-transparent text-slate-800 font-bold text-sm tracking-wide focus:outline-none cursor-pointer text-center">
-            <span id="date-badge-today" class="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">TODAY</span>
+            <span id="date-badge-today" class="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold shadow-sm">TODAY</span>
           </div>
 
           <button id="date-next" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition active:scale-90 shadow-sm">
@@ -154,7 +174,6 @@
         <!-- 3D Circular Attendance Gauge & Summary Widget -->
         <div class="gauge-3d-card">
           <div class="flex items-center gap-3.5">
-            <!-- 3D Circular SVG Progress Ring -->
             <div class="relative w-16 h-16 flex items-center justify-center">
               <svg class="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
                 <path class="text-slate-100" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
@@ -168,7 +187,7 @@
 
             <div>
               <h3 class="text-sm font-extrabold text-slate-900">Today's Attendance</h3>
-              <p id="gauge-status-subtext" class="text-xs text-slate-500 font-medium">0 of 0 candidates marked</p>
+              <p id="gauge-status-subtext" class="text-xs text-slate-500 font-medium">0 of 0 students marked</p>
             </div>
           </div>
 
@@ -181,7 +200,7 @@
         <div class="stats-grid">
           <div class="stat-pill border-indigo-100 bg-indigo-50/70">
             <div id="stat-total" class="stat-value text-indigo-700">0</div>
-            <div class="stat-label text-indigo-900">Total</div>
+            <div class="stat-label text-indigo-900">Students</div>
           </div>
           <div class="stat-pill border-emerald-200 bg-emerald-50/70">
             <div id="stat-present" class="stat-value text-emerald-600">0</div>
@@ -197,33 +216,38 @@
           </div>
         </div>
 
-        <!-- Search Bar & Dynamic Department Filter Chips -->
+        <!-- Search Bar (Searches Roll No, Student Name, Father's Name) -->
         <div class="flex flex-col gap-2.5 mb-4">
           <div class="relative">
             <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-            <input type="text" id="attendance-search" placeholder="Search candidate by name, ID, role..." class="w-full bg-white border border-slate-200 rounded-2xl pl-10 pr-3 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-sm">
+            <input type="text" id="attendance-search" placeholder="Search by Roll No, Student Naam, Father's Name..." class="w-full bg-white border border-slate-200 rounded-2xl pl-10 pr-3 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-sm">
           </div>
 
-          <!-- Dynamic Department Chips -->
-          <div id="dept-filter-chips" class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-            <!-- Populated dynamically -->
+          <!-- Batch & Course Quick Filter Chips -->
+          <div class="space-y-1.5">
+            <div id="batch-filter-chips" class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+              <!-- Dynamically populated batch chips -->
+            </div>
+            <div id="course-filter-chips" class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+              <!-- Dynamically populated course chips -->
+            </div>
           </div>
         </div>
 
-        <!-- 3D Attendance Candidate Cards -->
+        <!-- 3D Student Attendance Cards (With Father's Name & Roll No) -->
         <div id="attendance-list" class="space-y-3">
-          <!-- Populated dynamically with photos and 3D buttons -->
+          <!-- Populated dynamically with Father's Name & 3D buttons -->
         </div>
 
       </section>
 
-      <!-- ================= TAB 2: CANDIDATE DIRECTORY ================= -->
+      <!-- ================= TAB 2: STUDENT DIRECTORY ================= -->
       <section id="tab-candidates" class="tab-pane hidden">
         
         <div class="flex items-center justify-between mb-3.5">
           <div>
-            <h2 class="text-base font-extrabold text-slate-900">Candidate Directory</h2>
-            <p class="text-xs text-slate-500"><span id="candidate-count-badge" class="font-bold text-slate-800">0</span> candidates enrolled</p>
+            <h2 class="text-base font-extrabold text-slate-900">Student Directory</h2>
+            <p class="text-xs text-slate-500"><span id="candidate-count-badge" class="font-bold text-slate-800">0</span> students enrolled</p>
           </div>
           <button id="btn-new-candidate-action" class="px-3 py-1.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-indigo-600/30">
             <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Register
@@ -232,21 +256,62 @@
 
         <div class="relative mb-3.5">
           <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-          <input type="text" id="candidate-directory-search" placeholder="Search by name, ID, role, department..." class="w-full bg-white border border-slate-200 rounded-2xl pl-10 pr-3 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-sm">
+          <input type="text" id="candidate-directory-search" placeholder="Search by Roll No, Student Naam, Father's Name..." class="w-full bg-white border border-slate-200 rounded-2xl pl-10 pr-3 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-sm">
         </div>
 
         <div id="candidates-directory-list" class="space-y-2.5">
-          <!-- Dynamically populated -->
+          <!-- Dynamically populated student directory -->
         </div>
 
       </section>
 
-      <!-- ================= TAB 3: DATE-WISE HISTORY & EXPORT ================= -->
+      <!-- ================= TAB 3: NEW FEATURE - DEDICATED STUDENT HISTORY VIEW ================= -->
+      <section id="tab-student-history" class="tab-pane hidden">
+        
+        <div class="mb-3.5">
+          <h2 class="text-base font-extrabold text-slate-900">Individual Student History</h2>
+          <p class="text-xs text-slate-500">View Weekly & Monthly attendance records per student</p>
+        </div>
+
+        <!-- Student Selector Dropdown / Search -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-3.5 mb-3.5 shadow-sm space-y-2">
+          <label class="form-label text-indigo-700 mb-0 flex items-center justify-between" for="history-student-select">
+            <span>Select Student</span>
+            <span class="text-[10px] text-slate-400 font-normal">100+ Students Search</span>
+          </label>
+          <select id="history-student-select" class="form-select text-xs font-bold">
+            <!-- Dynamically populated with "Roll No - Name (S/o Father's Name)" -->
+          </select>
+        </div>
+
+        <!-- Selected Student Profile Header Card -->
+        <div id="history-student-card" class="bg-gradient-to-br from-indigo-50/80 to-slate-50 border border-indigo-100 rounded-2xl p-4 mb-3.5 shadow-sm">
+          <!-- Populated dynamically with student photo, roll no, father name, course, batch -->
+        </div>
+
+        <!-- Weekly vs. Monthly View Switcher Toggle -->
+        <div class="flex items-center justify-center p-1 bg-slate-200/80 rounded-2xl mb-3.5">
+          <button id="btn-view-weekly" class="flex-1 py-2 rounded-xl text-xs font-extrabold transition bg-white text-indigo-700 shadow-sm">
+            📅 Weekly View
+          </button>
+          <button id="btn-view-monthly" class="flex-1 py-2 rounded-xl text-xs font-extrabold transition text-slate-600 hover:text-slate-900">
+            📊 Monthly Matrix
+          </button>
+        </div>
+
+        <!-- Individual History Timeline Container -->
+        <div id="individual-history-content" class="space-y-3">
+          <!-- Dynamically populated Weekly or Monthly attendance view -->
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 4: DATE-WISE LOGS & EXPORT ================= -->
       <section id="tab-history" class="tab-pane hidden">
         
         <div class="mb-3.5">
-          <h2 class="text-base font-extrabold text-slate-900">Date-wise History</h2>
-          <p class="text-xs text-slate-500">Track past logs and generate attendance reports</p>
+          <h2 class="text-base font-extrabold text-slate-900">Date-wise Institute Logs</h2>
+          <p class="text-xs text-slate-500">Track date-wise attendance records & export reports</p>
         </div>
 
         <div class="bg-white border border-slate-200 rounded-2xl p-3.5 mb-3.5 shadow-sm">
@@ -300,131 +365,12 @@
 
       </section>
 
-      <!-- ================= TAB 4: ONLINE DEPLOYMENT & MULTI-USER CLOUD SYNC ================= -->
-      <section id="tab-deployment" class="tab-pane hidden">
-        
-        <div class="mb-3.5">
-          <div class="flex items-center justify-between">
-            <h2 class="text-base font-extrabold text-slate-900">Multi-Device Deployment</h2>
-            <span class="px-2 py-0.5 bg-emerald-100 border border-emerald-200 text-emerald-800 rounded-full text-[10px] font-bold">Cloud Sync</span>
-          </div>
-          <p class="text-xs text-slate-500">Deploy online so anyone sees the exact same data</p>
-        </div>
-
-        <!-- Live Multi-User Shared Room Card -->
-        <div class="bg-white border-2 border-indigo-200 rounded-2xl p-4 mb-3.5 shadow-sm space-y-3">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-              <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-800">
-                Shared Cloud Database Room
-              </h3>
-            </div>
-            <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold font-mono">LIVE SYNC</span>
-          </div>
-          
-          <p class="text-xs text-slate-600">
-            Share this <strong>Cloud Room ID</strong> with other admins. Any device with this ID accesses and updates the same candidates and attendance in real time!
-          </p>
-
-          <div class="flex gap-2">
-            <input type="text" id="input-cloud-room-id" value="GLOBAL-CAMPUS-2026" class="form-input text-xs font-mono font-bold">
-            <button id="btn-update-room-id" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs whitespace-nowrap shadow-sm">
-              Connect Room
-            </button>
-          </div>
-        </div>
-
-        <!-- Explainer -->
-        <div class="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-2xl p-4 text-white mb-3.5 shadow-md space-y-3">
-          <div class="flex items-center gap-2.5">
-            <span class="text-2xl">🌐</span>
-            <div>
-              <h3 class="text-sm font-bold text-white">How Anyone Accesses Same Data</h3>
-              <p class="text-[11px] text-indigo-200">Online hosting + shared database</p>
-            </div>
-          </div>
-
-          <div class="space-y-2 text-xs text-slate-200">
-            <div class="flex items-start gap-2 bg-white/10 p-2.5 rounded-xl">
-              <span class="font-bold text-emerald-400">1.</span>
-              <span><strong>Host Frontend Online:</strong> Upload this folder to <strong>Vercel, Netlify, or GitHub Pages</strong>. You get a public URL (e.g. <code>https://your-attendance.vercel.app</code>).</span>
-            </div>
-            <div class="flex items-start gap-2 bg-white/10 p-2.5 rounded-xl">
-              <span class="font-bold text-emerald-400">2.</span>
-              <span><strong>Share URL with Staff:</strong> Anyone on iPhone, Android, or PC opens that link in their browser.</span>
-            </div>
-            <div class="flex items-start gap-2 bg-white/10 p-2.5 rounded-xl">
-              <span class="font-bold text-emerald-400">3.</span>
-              <span><strong>Central Database:</strong> In Step 2 (PHP+MySQL) or Firebase, all data updates are centralized so everyone sees identical records.</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- PWA Mobile App Install Card -->
-        <div class="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-2xl p-4 text-white mb-3.5 shadow-md shadow-indigo-500/25">
-          <div class="flex items-center gap-3 mb-2.5">
-            <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl">
-              📲
-            </div>
-            <div>
-              <h3 class="text-sm font-bold">Install as Native Mobile App</h3>
-              <p class="text-[11px] text-indigo-100">Standalone PWA for iOS & Android</p>
-            </div>
-          </div>
-          <button id="btn-trigger-pwa-install" class="w-full py-2.5 bg-white hover:bg-slate-100 text-indigo-900 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition active:scale-95">
-            <i data-lucide="download" class="w-4 h-4 text-indigo-600"></i> Install Mobile App
-          </button>
-        </div>
-
-        <!-- Hosting Guides -->
-        <div class="bg-white border border-slate-200 rounded-2xl p-4 mb-3.5 shadow-sm space-y-3">
-          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-            <i data-lucide="globe" class="w-4 h-4 text-emerald-600"></i>
-            Online Hosting Guides
-          </h3>
-
-          <div class="space-y-2">
-            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
-              <div class="flex items-center gap-2.5">
-                <span class="text-lg">▲</span>
-                <div>
-                  <h4 class="text-xs font-bold text-slate-800">Vercel / Netlify (Recommended)</h4>
-                  <p class="text-[10px] text-slate-500">Instant free link to share with everyone</p>
-                </div>
-              </div>
-              <button id="btn-deploy-vercel-guide" class="px-2.5 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-bold hover:border-slate-300">
-                Setup
-              </button>
-            </div>
-
-            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
-              <div class="flex items-center gap-2.5">
-                <span class="text-lg">🐘</span>
-                <div>
-                  <h4 class="text-xs font-bold text-slate-800">cPanel / Shared PHP Hosting</h4>
-                  <p class="text-[10px] text-slate-500">Upload to public_html with MySQL DB</p>
-                </div>
-              </div>
-              <button id="btn-deploy-cpanel-guide" class="px-2.5 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-bold hover:border-slate-300">
-                Setup
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <button id="btn-download-deploy-bundle" class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-md active:scale-98 transition">
-          <i data-lucide="package" class="w-4 h-4 text-emerald-400"></i> Download Deployment Instructions (.MD)
-        </button>
-
-      </section>
-
-      <!-- ================= TAB 5: CUSTOMIZE SETTINGS ================= -->
+      <!-- ================= TAB 5: CUSTOMIZE & SETTINGS ================= -->
       <section id="tab-settings" class="tab-pane hidden">
         
         <div class="mb-3.5">
           <h2 class="text-base font-extrabold text-slate-900">Customization & Settings</h2>
-          <p class="text-xs text-slate-500">Personalize branding, 3D theme, logo & rules</p>
+          <p class="text-xs text-slate-500">Manage courses, batch timings, logo & institute rules</p>
         </div>
 
         <!-- 1. Organization Official Logo Upload -->
@@ -432,15 +378,15 @@
           <div class="flex items-center justify-between">
             <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
               <i data-lucide="image" class="w-4 h-4 text-indigo-600"></i>
-              Organization Logo Photo
+              Institute Official Logo Photo
             </h3>
             <span class="text-[10px] px-2 py-0.5 bg-indigo-50 text-indigo-700 font-bold rounded-full">BRANDING</span>
           </div>
 
           <div class="flex items-center gap-3.5">
             <div id="settings-logo-preview-box" class="brand-logo-frame w-14 h-14 rounded-2xl border-2 border-indigo-200 shadow-md">
-              <span id="settings-logo-emoji" class="text-2xl">⚡</span>
-              <img id="settings-logo-img" src="" alt="Org Logo" class="hidden w-full h-full object-cover">
+              <span id="settings-logo-emoji" class="text-2xl">🎓</span>
+              <img id="settings-logo-img" src="" alt="Institute Logo" class="hidden w-full h-full object-cover">
             </div>
 
             <div class="flex-1 space-y-1.5">
@@ -456,7 +402,24 @@
           </div>
         </div>
 
-        <!-- 2. Admin Security Settings -->
+        <!-- 2. Course Manager -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 mb-3.5 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+              <i data-lucide="book-open" class="w-4 h-4 text-indigo-600"></i>
+              Courses Offered
+            </h3>
+            <button id="btn-open-add-dept" class="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Course
+            </button>
+          </div>
+
+          <div id="settings-dept-tags" class="flex flex-wrap gap-1.5">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- 3. Admin Security Settings -->
         <div class="bg-white border border-slate-200 rounded-2xl p-4 mb-3.5 shadow-sm space-y-3">
           <div class="flex items-center justify-between">
             <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
@@ -484,71 +447,7 @@
           </form>
         </div>
 
-        <!-- 3. Theme Color Swatches -->
-        <div class="bg-white border border-slate-200 rounded-2xl p-4 mb-3.5 shadow-sm space-y-2.5">
-          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-            <i data-lucide="palette" class="w-4 h-4 text-indigo-600"></i>
-            Theme Accent Color
-          </h3>
-          <div id="theme-swatches" class="flex items-center justify-between pt-1">
-            <button class="theme-swatch active w-9 h-9 rounded-2xl bg-indigo-600 border-2 border-slate-900 flex items-center justify-center text-white shadow-sm" data-theme="indigo">
-              <i data-lucide="check" class="w-4 h-4"></i>
-            </button>
-            <button class="theme-swatch w-9 h-9 rounded-2xl bg-blue-600 border-2 border-transparent flex items-center justify-center text-white shadow-sm" data-theme="blue">
-              <i data-lucide="check" class="w-4 h-4 opacity-0"></i>
-            </button>
-            <button class="theme-swatch w-9 h-9 rounded-2xl bg-emerald-600 border-2 border-transparent flex items-center justify-center text-white shadow-sm" data-theme="emerald">
-              <i data-lucide="check" class="w-4 h-4 opacity-0"></i>
-            </button>
-            <button class="theme-swatch w-9 h-9 rounded-2xl bg-orange-600 border-2 border-transparent flex items-center justify-center text-white shadow-sm" data-theme="orange">
-              <i data-lucide="check" class="w-4 h-4 opacity-0"></i>
-            </button>
-            <button class="theme-swatch w-9 h-9 rounded-2xl bg-purple-600 border-2 border-transparent flex items-center justify-center text-white shadow-sm" data-theme="purple">
-              <i data-lucide="check" class="w-4 h-4 opacity-0"></i>
-            </button>
-          </div>
-        </div>
-
-        <!-- 4. Organization Profile Branding -->
-        <div class="bg-white border border-slate-200 rounded-2xl p-4 mb-3.5 shadow-sm space-y-3">
-          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-            <i data-lucide="building-2" class="w-4 h-4 text-indigo-600"></i>
-            Organization Text Details
-          </h3>
-
-          <div class="form-group mb-2">
-            <label class="form-label" for="setting-org-name">Company / Institute Name</label>
-            <input type="text" id="setting-org-name" class="form-input">
-          </div>
-
-          <div class="form-group mb-1">
-            <label class="form-label" for="setting-org-branch">Branch / Department Tagline</label>
-            <input type="text" id="setting-org-branch" class="form-input">
-          </div>
-
-          <button id="btn-save-branding" class="w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl font-bold text-xs transition active:scale-95 shadow-sm">
-            Save Organization Details
-          </button>
-        </div>
-
-        <!-- 5. Custom Department Manager -->
-        <div class="bg-white border border-slate-200 rounded-2xl p-4 mb-3.5 shadow-sm space-y-3">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-              <i data-lucide="layers" class="w-4 h-4 text-indigo-600"></i>
-              Manage Departments
-            </h3>
-            <button id="btn-open-add-dept" class="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add
-            </button>
-          </div>
-
-          <div id="settings-dept-tags" class="flex flex-wrap gap-1.5">
-            <!-- Populated dynamically -->
-          </div>
-        </div>
-
-        <!-- 6. Backup & Data Management -->
+        <!-- 4. Backup & Data Management -->
         <div class="bg-white border border-slate-200 rounded-2xl p-4 mb-4 shadow-sm space-y-2.5">
           <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
             <i data-lucide="database" class="w-4 h-4 text-indigo-600"></i>
@@ -575,11 +474,11 @@
     </main>
 
     <!-- ================= 3D FLOATING ACTION BUTTON ================= -->
-    <button id="fab-add-candidate" class="fab-btn" title="Add Candidate">
+    <button id="fab-add-candidate" class="fab-btn" title="Add Student">
       <i data-lucide="plus" class="w-6 h-6"></i>
     </button>
 
-    <!-- ================= 3D BOTTOM NAVIGATION DOCK ================= -->
+    <!-- ================= 3D BOTTOM NAVIGATION DOCK (5 Tabs) ================= -->
     <nav class="bottom-dock">
       <button class="dock-item active" data-tab="tab-attendance">
         <i data-lucide="check-circle" class="w-5 h-5"></i>
@@ -587,15 +486,15 @@
       </button>
       <button class="dock-item" data-tab="tab-candidates">
         <i data-lucide="users" class="w-5 h-5"></i>
-        <span>Candidates</span>
+        <span>Students</span>
+      </button>
+      <button class="dock-item" data-tab="tab-student-history">
+        <i data-lucide="user-check" class="w-5 h-5"></i>
+        <span>Student Log</span>
       </button>
       <button class="dock-item" data-tab="tab-history">
         <i data-lucide="calendar-days" class="w-5 h-5"></i>
         <span>History</span>
-      </button>
-      <button class="dock-item" data-tab="tab-deployment">
-        <i data-lucide="cloud-upload" class="w-5 h-5"></i>
-        <span>Deploy</span>
       </button>
       <button class="dock-item" data-tab="tab-settings">
         <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
@@ -603,14 +502,14 @@
       </button>
     </nav>
 
-    <!-- ================= MODAL: REGISTER CANDIDATE (WITH PHOTO UPLOAD) ================= -->
+    <!-- ================= MODAL: REGISTER STUDENT (Strict Coaching Fields) ================= -->
     <div id="modal-add-candidate" class="modal-overlay">
       <div class="modal-sheet">
         <div class="sheet-handle"></div>
         <div class="flex items-center justify-between mb-3">
           <div>
-            <h3 class="text-base font-extrabold text-slate-900">Register Candidate</h3>
-            <p class="text-xs text-slate-500">Upload real photo or pick an avatar</p>
+            <h3 class="text-base font-black text-slate-900">Student Admission / Registration</h3>
+            <p class="text-xs text-slate-500">Fill student profile & capture photo</p>
           </div>
           <button id="btn-close-candidate-modal" class="p-1.5 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800">
             <i data-lucide="x" class="w-4 h-4"></i>
@@ -619,13 +518,13 @@
 
         <form id="form-add-candidate" class="space-y-3">
           
-          <!-- Candidate Photo Upload Dropzone -->
+          <!-- 1. Photo Capture / Upload -->
           <div class="form-group mb-2">
-            <label class="form-label">Candidate Photo</label>
+            <label class="form-label">Student Photo</label>
             <div class="flex items-center gap-3">
               <div id="photo-preview-box" class="photo-preview-ring bg-slate-100 flex items-center justify-center shrink-0">
-                <span id="photo-preview-emoji" class="text-2xl">👤</span>
-                <img id="photo-preview-img" src="" alt="Candidate Photo" class="candidate-avatar-img hidden">
+                <span id="photo-preview-emoji" class="text-2xl">👨‍🎓</span>
+                <img id="photo-preview-img" src="" alt="Student Photo" class="student-avatar-img hidden">
               </div>
 
               <div class="flex-1 space-y-1.5">
@@ -640,69 +539,74 @@
               </div>
             </div>
             <input type="hidden" id="candidate-photo-data" value="">
+            <input type="hidden" id="candidate-avatar" value="👨‍🎓">
           </div>
 
-          <!-- Fallback Avatar Emoji Picker -->
-          <div id="emoji-picker-row">
-            <label class="form-label">Or Pick Avatar Emoji</label>
-            <div id="avatar-selector" class="flex gap-2 overflow-x-auto pb-1">
-              <button type="button" class="avatar-option active w-9 h-9 rounded-2xl bg-indigo-50 border-2 border-indigo-600 text-lg flex items-center justify-center shadow-sm" data-emoji="👨‍💻">👨‍💻</button>
-              <button type="button" class="avatar-option w-9 h-9 rounded-2xl bg-slate-100 border border-slate-200 text-lg flex items-center justify-center" data-emoji="👩‍💻">👩‍💻</button>
-              <button type="button" class="avatar-option w-9 h-9 rounded-2xl bg-slate-100 border border-slate-200 text-lg flex items-center justify-center" data-emoji="👨‍💼">👨‍💼</button>
-              <button type="button" class="avatar-option w-9 h-9 rounded-2xl bg-slate-100 border border-slate-200 text-lg flex items-center justify-center" data-emoji="👩‍💼">👩‍💼</button>
-              <button type="button" class="avatar-option w-9 h-9 rounded-2xl bg-slate-100 border border-slate-200 text-lg flex items-center justify-center" data-emoji="🧑‍🔬">🧑‍🔬</button>
-              <button type="button" class="avatar-option w-9 h-9 rounded-2xl bg-slate-100 border border-slate-200 text-lg flex items-center justify-center" data-emoji="👩‍🎨">👩‍🎨</button>
+          <!-- 2. Roll No & Student Name (Naam) -->
+          <div class="grid grid-cols-3 gap-2.5">
+            <div class="form-group mb-2 col-span-1">
+              <label class="form-label" for="student-roll-no">Roll No *</label>
+              <input type="text" id="student-roll-no" required placeholder="107" class="form-input font-mono font-bold">
             </div>
-            <input type="hidden" id="candidate-avatar" value="👨‍💻">
+            <div class="form-group mb-2 col-span-2">
+              <label class="form-label" for="student-name">Student Name (Naam) *</label>
+              <input type="text" id="student-name" required placeholder="e.g. Rahul Sharma" class="form-input">
+            </div>
           </div>
 
+          <!-- 3. Father's Name (To differentiate students with same name) -->
           <div class="form-group mb-2">
-            <label class="form-label" for="candidate-name">Full Name *</label>
-            <input type="text" id="candidate-name" required placeholder="e.g. Rahul Sharma" class="form-input">
+            <label class="form-label" for="student-father-name">Father's Name (Pita ka Naam) *</label>
+            <input type="text" id="student-father-name" required placeholder="e.g. Mr. Rajesh Sharma" class="form-input">
           </div>
 
+          <!-- 4. Contact Number & Optional Email -->
           <div class="grid grid-cols-2 gap-2.5">
             <div class="form-group mb-2">
-              <label class="form-label" for="candidate-id">Candidate ID</label>
-              <input type="text" id="candidate-id" placeholder="CAN-107" class="form-input">
+              <label class="form-label" for="student-contact-no">Contact No (Mobile) *</label>
+              <input type="tel" id="student-contact-no" required placeholder="+91 98765 00000" class="form-input">
             </div>
             <div class="form-group mb-2">
-              <label class="form-label" for="candidate-dept">Department</label>
-              <select id="candidate-dept" class="form-select">
-                <!-- Dynamically populated -->
+              <label class="form-label" for="student-email">Email (Optional)</label>
+              <input type="email" id="student-email" placeholder="student@gmail.com" class="form-input">
+            </div>
+          </div>
+
+          <!-- 5. Course Name & Batch Time -->
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="form-group mb-2">
+              <label class="form-label" for="student-course">Course Name *</label>
+              <select id="student-course" class="form-select text-xs font-semibold">
+                <!-- Dynamically populated from settings -->
+              </select>
+            </div>
+            <div class="form-group mb-2">
+              <label class="form-label" for="student-batch">Batch Time *</label>
+              <select id="student-batch" class="form-select text-xs font-semibold">
+                <!-- Dynamically populated from settings -->
               </select>
             </div>
           </div>
 
+          <!-- 6. Address -->
           <div class="form-group mb-2">
-            <label class="form-label" for="candidate-role">Designation / Role</label>
-            <input type="text" id="candidate-role" placeholder="e.g. Frontend Engineer" class="form-input">
-          </div>
-
-          <div class="grid grid-cols-2 gap-2.5">
-            <div class="form-group mb-2">
-              <label class="form-label" for="candidate-phone">Phone</label>
-              <input type="tel" id="candidate-phone" placeholder="+91 98765 00000" class="form-input">
-            </div>
-            <div class="form-group mb-2">
-              <label class="form-label" for="candidate-email">Email</label>
-              <input type="email" id="candidate-email" placeholder="name@company.com" class="form-input">
-            </div>
+            <label class="form-label" for="student-address">Residential Address</label>
+            <input type="text" id="student-address" placeholder="e.g. H.No 42, Civil Lines, Kanpur" class="form-input text-xs">
           </div>
 
           <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl text-sm shadow-md shadow-indigo-600/30 active:scale-98 transition flex items-center justify-center gap-2 mt-2">
-            <i data-lucide="check" class="w-4 h-4"></i> Save Candidate Profile
+            <i data-lucide="check" class="w-4 h-4"></i> Save Student Profile
           </button>
         </form>
       </div>
     </div>
 
-    <!-- ================= MODAL: CANDIDATE DETAIL PROFILE ================= -->
+    <!-- ================= MODAL: STUDENT DETAIL PROFILE ================= -->
     <div id="modal-candidate-detail" class="modal-overlay">
       <div class="modal-sheet">
         <div class="sheet-handle"></div>
         <div class="flex items-center justify-between mb-3">
-          <h3 class="text-base font-extrabold text-slate-900">Candidate Profile</h3>
+          <h3 class="text-base font-extrabold text-slate-900">Student Profile</h3>
           <button id="btn-close-detail-modal" class="p-1.5 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800">
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
@@ -719,7 +623,7 @@
       <div class="modal-sheet">
         <div class="sheet-handle"></div>
         <div class="flex items-center justify-between mb-3">
-          <h3 class="text-base font-extrabold text-slate-900">Digital ID Card</h3>
+          <h3 class="text-base font-extrabold text-slate-900">Coaching ID Card</h3>
           <button id="btn-close-id-badge" class="p-1.5 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800">
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
@@ -731,18 +635,18 @@
 
         <div class="mt-4 flex gap-2">
           <button id="btn-print-id-card" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 shadow-md">
-            <i data-lucide="printer" class="w-4 h-4"></i> Print / Download ID Badge
+            <i data-lucide="printer" class="w-4 h-4"></i> Print Student ID Card
           </button>
         </div>
       </div>
     </div>
 
-    <!-- ================= MODAL: ADD CUSTOM DEPARTMENT ================= -->
+    <!-- ================= MODAL: ADD COURSE ================= -->
     <div id="modal-add-dept" class="modal-overlay">
       <div class="modal-sheet">
         <div class="sheet-handle"></div>
         <div class="flex items-center justify-between mb-3">
-          <h3 class="text-base font-extrabold text-slate-900">Add Department</h3>
+          <h3 class="text-base font-extrabold text-slate-900">Add New Course</h3>
           <button id="btn-close-dept-modal" class="p-1.5 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800">
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
@@ -750,11 +654,11 @@
 
         <form id="form-add-dept" class="space-y-3">
           <div class="form-group">
-            <label class="form-label" for="input-new-dept-name">Department Name</label>
-            <input type="text" id="input-new-dept-name" required placeholder="e.g. Data Science / Legal" class="form-input">
+            <label class="form-label" for="input-new-dept-name">Course Name</label>
+            <input type="text" id="input-new-dept-name" required placeholder="e.g. Class 12th Board Crash Course" class="form-input">
           </div>
           <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl text-xs shadow-md">
-            Add Department
+            Add Course
           </button>
         </form>
       </div>
