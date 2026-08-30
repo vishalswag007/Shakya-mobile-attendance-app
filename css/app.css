@@ -1,14 +1,14 @@
 /* ==========================================================================
-   Apex Coaching Institute - 3D Attractive Mobile-First Web Portal
-   Optimized for GitHub Pages, Multi-Phone Cloud Access & 3D Tactile Design
+   Apex Coaching Institute - Ultra-Professional Mobile-First SaaS Theme
+   Clean, Modern, Apple/Linear-Grade Toolbar & Attendance Dashboard
    ========================================================================== */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
 
 :root {
   --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   
-  /* 3D Theme Palette */
-  --bg-page: #f0f4f9;
+  /* Modern Professional Palette */
+  --bg-page: #f8fafc;
   --bg-card: #ffffff;
   --bg-input: #f8fafc;
   
@@ -18,37 +18,38 @@
   --text-main: #0f172a;
   --text-muted: #64748b;
   
-  /* 3D Brand Indigo */
+  /* Brand Indigo */
   --primary: #4f46e5;
   --primary-light: #6366f1;
   --primary-dark: #3730a3;
   --primary-bg: #eef2ff;
   --primary-border: #c7d2fe;
   
-  /* 3D Status Colors with Tactile Depth */
+  /* Status Colors */
   --present: #10b981;
-  --present-dark: #059669;
   --present-bg: #ecfdf5;
   --present-border: #a7f3d0;
   --present-text: #065f46;
   
   --absent: #ef4444;
-  --absent-dark: #dc2626;
   --absent-bg: #fff1f2;
   --absent-border: #fecdd3;
   --absent-text: #9f1239;
   
   --leave: #f59e0b;
-  --leave-dark: #d97706;
   --leave-bg: #fffbeb;
   --leave-border: #fde68a;
   --leave-text: #92400e;
 
-  /* 3D Shadows & Lighting */
-  --shadow-3d-card: 0 10px 25px -5px rgba(79, 70, 229, 0.08), 0 4px 10px -2px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --shadow-3d-card-hover: 0 16px 32px -6px rgba(79, 70, 229, 0.14), 0 6px 14px -3px rgba(0, 0, 0, 0.06);
-  --shadow-3d-btn: 0 4px 0 rgba(0, 0, 0, 0.12), 0 6px 16px rgba(79, 70, 229, 0.2);
-  --shadow-bottom-nav: 0 -8px 25px rgba(15, 23, 42, 0.09), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --holiday: #8b5cf6;
+  --holiday-bg: #f5f3ff;
+  --holiday-border: #ddd6fe;
+  --holiday-text: #5b21b6;
+
+  /* Shadows */
+  --shadow-card: 0 4px 16px -2px rgba(15, 23, 42, 0.05), 0 2px 4px -1px rgba(15, 23, 42, 0.03);
+  --shadow-card-hover: 0 10px 25px -4px rgba(79, 70, 229, 0.08), 0 4px 10px -2px rgba(0, 0, 0, 0.03);
+  --shadow-bottom-nav: 0 -4px 20px rgba(15, 23, 42, 0.06);
 }
 
 * {
@@ -65,7 +66,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding-bottom: calc(84px + env(safe-area-inset-bottom, 16px));
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 16px));
   overflow-x: hidden;
 }
 
@@ -76,41 +77,72 @@ body {
 
 .tab-content-panel.active {
   display: block !important;
-  animation: fadeIn3D 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeInPro 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes fadeIn3D {
-  from { opacity: 0; transform: translateY(6px) scale(0.99); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+@keyframes fadeInPro {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .hidden {
   display: none !important;
 }
 
-/* 3D Top Header */
+/* ==========================================================================
+   ADMIN LOGIN OVERLAY
+   ========================================================================== */
+.admin-login-overlay {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  backdrop-filter: blur(12px);
+}
+
+.admin-login-card-3d {
+  background: rgba(255, 255, 255, 0.98);
+  border: 1.5px solid rgba(199, 210, 254, 0.8);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 380px;
+  padding: 28px 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  text-align: center;
+  animation: loginPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes loginPop {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Header */
 .phone-top-header {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-subtle);
   position: sticky;
   top: 0;
   z-index: 30;
-  padding: 10px 16px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  padding: 10px 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
 }
 
-/* 3D Brand Logo Frame */
 .brand-logo-3d {
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #ffffff, #eef2ff);
   border: 1.5px solid var(--primary-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.15), inset 0 1px 0 rgba(255, 255, 255, 1);
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.1);
   overflow: hidden;
   shrink: 0;
 }
@@ -120,39 +152,25 @@ body {
   object-fit: cover;
 }
 
-/* 3D Prominent Active Month Banner */
+/* Month Banner Card */
 .month-banner-3d {
-  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 60%, #3730a3 100%);
-  border-radius: 22px;
-  padding: 16px;
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  border-radius: 18px;
+  padding: 14px 16px;
   color: #ffffff;
-  box-shadow: 0 12px 28px -4px rgba(79, 70, 229, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  box-shadow: 0 8px 20px -3px rgba(79, 70, 229, 0.25);
   margin-bottom: 12px;
-  position: relative;
-  overflow: hidden;
 }
 
-.month-banner-3d::after {
-  content: '';
-  position: absolute;
-  top: -40px;
-  right: -40px;
-  width: 120px;
-  height: 120px;
-  background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-/* 3D Stat Summary Card */
+/* Stat Cards */
 .stat-card-3d {
   background: #ffffff;
   border: 1px solid var(--border-subtle);
-  border-radius: 18px;
-  padding: 10px 8px;
+  border-radius: 14px;
+  padding: 9px 6px;
   text-align: center;
-  box-shadow: var(--shadow-3d-card);
-  transition: all 0.2s ease;
+  box-shadow: var(--shadow-card);
+  transition: all 0.15s ease;
   position: relative;
   overflow: hidden;
 }
@@ -164,7 +182,6 @@ body {
   left: 0;
   right: 0;
   height: 3px;
-  background: transparent;
 }
 
 .stat-card-3d.stat-total::before { background: var(--primary); }
@@ -172,25 +189,180 @@ body {
 .stat-card-3d.stat-absent::before { background: var(--absent); }
 .stat-card-3d.stat-leave::before { background: var(--leave); }
 
-/* 3D Student Attendance Card */
+/* ==========================================================================
+   CLEAN & PROFESSIONAL SAAS FILTER TOOLBAR
+   ========================================================================== */
+.filter-toolbar-card {
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 12px;
+}
+
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+}
+
+.search-input-field {
+  width: 100%;
+  background: #f8fafc;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 8.5px 12px 8.5px 36px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-main);
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.search-input-field:focus {
+  background: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.search-icon-inside {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.btn-mark-all-3d {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8.5px 13px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #10b981;
+  color: #ffffff;
+  border: 1px solid #059669;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  shrink: 0;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+}
+
+.btn-mark-all-3d:hover {
+  background: #059669;
+}
+
+.btn-mark-all-3d:active {
+  transform: scale(0.96);
+}
+
+/* Professional Select Controls */
+.filter-dropdown-select {
+  width: 100%;
+  background: #f8fafc;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 6.5px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-dropdown-select:focus {
+  border-color: var(--primary);
+  background: #ffffff;
+}
+
+/* Horizontal Scroll Container for Filter Chips */
+.filter-scroll-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.filter-scroll-row::-webkit-scrollbar {
+  display: none;
+}
+
+/* Professional Minimal Filter Pill Button */
+.filter-pill-3d {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.filter-pill-3d:hover {
+  background: #f1f5f9;
+  color: var(--text-main);
+  border-color: var(--border-medium);
+}
+
+.filter-pill-3d.active {
+  background: #eef2ff;
+  color: #3730a3;
+  border-color: #a5b4fc;
+  font-weight: 700;
+}
+
+/* Holiday Banner */
+.holiday-banner-3d {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-radius: 16px;
+  padding: 12px 14px;
+  color: #ffffff;
+  box-shadow: 0 6px 16px -2px rgba(139, 92, 246, 0.3);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* ==========================================================================
+   STUDENT CARDS & ATTENDANCE BUTTONS
+   ========================================================================== */
 .student-card-3d {
   background: #ffffff;
   border: 1px solid var(--border-subtle);
-  border-radius: 20px;
-  padding: 14px;
-  margin-bottom: 12px;
-  box-shadow: var(--shadow-3d-card);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 16px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-card);
+  transition: all 0.15s ease;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
   position: relative;
   overflow: hidden;
 }
 
 .student-card-3d:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-3d-card-hover);
+  border-color: var(--border-medium);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .student-card-3d::before {
@@ -199,13 +371,13 @@ body {
   top: 0;
   left: 0;
   bottom: 0;
-  width: 5px;
+  width: 4px;
   background: transparent;
-  transition: background 0.25s;
+  transition: background 0.2s;
 }
 
 .student-card-3d.status-present {
-  background: linear-gradient(180deg, #ffffff 0%, #f7fdfa 100%);
+  background: #ffffff;
   border-color: var(--present-border);
 }
 .student-card-3d.status-present::before {
@@ -213,7 +385,7 @@ body {
 }
 
 .student-card-3d.status-absent {
-  background: linear-gradient(180deg, #ffffff 0%, #fdf8f8 100%);
+  background: #ffffff;
   border-color: var(--absent-border);
 }
 .student-card-3d.status-absent::before {
@@ -221,95 +393,90 @@ body {
 }
 
 .student-card-3d.status-leave {
-  background: linear-gradient(180deg, #ffffff 0%, #fdfbf7 100%);
+  background: #ffffff;
   border-color: var(--leave-border);
 }
 .student-card-3d.status-leave::before {
   background: var(--leave);
 }
 
-/* 3D Father's Name Badge (Distinct & Attractive) */
+/* Father's Name Badge (Clean, Modern, Clear) */
 .father-name-badge-3d {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 3px;
   font-size: 11px;
-  font-weight: 800;
-  color: #1e293b;
-  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-  padding: 3px 10px;
-  border-radius: 10px;
-  border: 1px solid #cbd5e1;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  font-weight: 700;
+  color: #334155;
+  background: #f1f5f9;
+  padding: 2.5px 8px;
+  border-radius: 7px;
+  border: 1px solid #e2e8f0;
 }
 
-/* 3D Tactile Attendance Buttons */
+/* Attendance Button Group */
 .attendance-3d-btn-group {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
+  gap: 6px;
 }
 
 .btn-3d-status {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  padding: 10px 4px;
-  border-radius: 14px;
-  font-size: 12px;
-  font-weight: 800;
+  gap: 4px;
+  padding: 8px 4px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
   border: 1px solid var(--border-subtle);
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  background: #f8fafc;
   color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 40px;
-  box-shadow: 0 3px 0 #cbd5e1, 0 4px 6px rgba(0,0,0,0.04);
-  position: relative;
+  transition: all 0.12s ease;
+  min-height: 36px;
 }
 
 .btn-3d-status:active {
-  transform: translateY(3px);
-  box-shadow: 0 0 0 #cbd5e1, 0 1px 2px rgba(0,0,0,0.04);
+  transform: scale(0.96);
 }
 
-/* Active 3D States with Glowing Tactile Elevation */
 .btn-3d-status.btn-present.active {
-  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
-  border-color: #047857;
+  background: #10b981;
+  border-color: #059669;
   color: #ffffff;
-  box-shadow: 0 3px 0 #047857, 0 6px 14px rgba(16, 185, 129, 0.35);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .btn-3d-status.btn-absent.active {
-  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
-  border-color: #b91c1c;
+  background: #ef4444;
+  border-color: #dc2626;
   color: #ffffff;
-  box-shadow: 0 3px 0 #b91c1c, 0 6px 14px rgba(239, 68, 68, 0.35);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 .btn-3d-status.btn-leave.active {
-  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
-  border-color: #b45309;
+  background: #f59e0b;
+  border-color: #d97706;
   color: #ffffff;
-  box-shadow: 0 3px 0 #b45309, 0 6px 14px rgba(245, 158, 11, 0.35);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
 }
 
-/* 3D Floating Bottom Navigation Bar (Down Side) */
+/* Bottom Navigation Bar */
 .phone-bottom-nav-3d {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 72px;
-  background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  height: 64px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(226, 232, 240, 0.9);
   display: flex;
   align-items: center;
   justify-content: space-around;
-  padding: 4px 6px calc(env(safe-area-inset-bottom, 6px));
+  padding: 3px 6px calc(env(safe-area-inset-bottom, 4px));
   z-index: 50;
   box-shadow: var(--shadow-bottom-nav);
 }
@@ -319,19 +486,18 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   color: var(--text-muted);
   font-size: 10px;
-  font-weight: 700;
-  padding: 6px 8px;
-  border-radius: 16px;
+  font-weight: 600;
+  padding: 5px 6px;
+  border-radius: 12px;
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s ease;
   flex: 1;
-  max-width: 80px;
-  position: relative;
+  max-width: 74px;
 }
 
 .bottom-tab-btn-3d:active {
@@ -340,23 +506,38 @@ body {
 
 .bottom-tab-btn-3d.active {
   color: var(--primary);
-  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
-  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  background: #eef2ff;
 }
 
 .bottom-tab-btn-3d.active svg {
   stroke: var(--primary);
   stroke-width: 2.5;
-  transform: scale(1.15);
 }
 
-/* 3D ID Badge Card */
+/* Batch Management Row */
+.batch-item-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  background: #f8fafc;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  transition: all 0.15s ease;
+}
+
+.batch-item-card:hover {
+  background: #f1f5f9;
+  border-color: var(--border-medium);
+}
+
+/* ID Badge Card */
 .id-card-3d {
-  background: linear-gradient(145deg, #ffffff, #f1f5f9);
-  border: 2px solid #c7d2fe;
-  border-radius: 24px;
-  padding: 20px;
-  box-shadow: 0 20px 40px -10px rgba(79, 70, 229, 0.2), inset 0 2px 0 rgba(255, 255, 255, 1);
+  background: #ffffff;
+  border: 1.5px solid #c7d2fe;
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.15);
 }
 
 /* Modals */
@@ -364,7 +545,7 @@ body {
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(5px);
   z-index: 100;
   display: none;
   align-items: flex-end;
@@ -381,45 +562,33 @@ body {
 
 .modal-backdrop-3d.open {
   display: flex !important;
-  animation: modalFade3D 0.2s ease-out;
-}
-
-@keyframes modalFade3D {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 .modal-sheet-3d {
   background: #ffffff;
-  border-radius: 28px 28px 0 0;
+  border-radius: 24px 24px 0 0;
   width: 100%;
-  max-width: 520px;
-  max-height: 90vh;
+  max-width: 500px;
+  max-height: 88vh;
   overflow-y: auto;
-  padding: 22px 20px 36px;
-  box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.2);
-  animation: slideUp3D 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 20px 18px 32px;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.15);
 }
 
 @media (min-width: 640px) {
   .modal-sheet-3d {
-    border-radius: 28px;
-    padding: 26px;
+    border-radius: 24px;
+    padding: 24px;
   }
 }
 
-@keyframes slideUp3D {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-/* 3D Toasts */
+/* Toast */
 .toast-container-3d {
   position: fixed;
-  top: 18px;
-  left: 18px;
-  right: 18px;
-  z-index: 120;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 250;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -427,24 +596,24 @@ body {
 }
 
 .toast-3d {
-  background: linear-gradient(135deg, #0f172a, #1e293b);
+  background: #0f172a;
   color: #ffffff;
-  padding: 12px 20px;
-  border-radius: 22px;
+  padding: 9px 16px;
+  border-radius: 16px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 10px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  animation: toastPop3D 0.25s cubic-bezier(0.16, 1, 0.3, 1), toastFadeOut3D 0.3s 2.4s forwards;
+  gap: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  animation: toastPop 0.2s ease-out, toastFadeOut 0.3s 2.3s forwards;
 }
 
-@keyframes toastPop3D {
-  from { opacity: 0; transform: translateY(-12px) scale(0.92); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+@keyframes toastPop {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes toastFadeOut3D {
-  to { opacity: 0; transform: translateY(-12px) scale(0.92); }
+@keyframes toastFadeOut {
+  to { opacity: 0; transform: translateY(-8px); }
 }

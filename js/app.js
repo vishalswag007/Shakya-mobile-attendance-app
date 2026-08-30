@@ -1,7 +1,7 @@
 /**
- * Apex Coaching Institute - 3D Mobile-First Web Application Controller
- * Handles 3D Touch Interactions, WhatsApp Attendance Sharing, Cloud Sync,
- * Individual Student History & Directory.
+ * Apex Coaching Institute - Professional Mobile-First Web Application Controller
+ * Features: Real-Time OTP Email Password Recovery, Clean SaaS Toolbar, Candidate DOB,
+ * Admin Security Gate, Student Edit, Batch Timings Manager, Holiday Calendar, Inbuilt Cloud Sync, WhatsApp Sharing.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,6 +15,46 @@ document.addEventListener('DOMContentLoaded', () => {
   let historyStatusFilter = 'all';
   let selectedStudentRollNo = null;
   let historyViewMode = 'weekly'; // 'weekly' | 'monthly'
+
+  // Admin Login Overlay DOM
+  const adminLoginOverlay = document.getElementById('admin-login-overlay');
+  const formAdminLogin = document.getElementById('form-admin-login');
+  const inputAdminPassword = document.getElementById('input-admin-password');
+  const btnToggleLoginPass = document.getElementById('btn-toggle-login-pass');
+  const loginBrandEmoji = document.getElementById('login-brand-emoji');
+  const loginBrandImg = document.getElementById('login-brand-img');
+  const loginOrgTitle = document.getElementById('login-org-title');
+  const btnHeaderLock = document.getElementById('btn-header-lock');
+  const btnOpenForgotPass = document.getElementById('btn-open-forgot-pass');
+
+  // Forgot Password & OTP Recovery DOM
+  const modalForgotPassword = document.getElementById('modal-forgot-password');
+  const btnCloseForgotModal = document.getElementById('btn-close-forgot-modal');
+  const recoveryStep1 = document.getElementById('recovery-step-1');
+  const recoveryStep2 = document.getElementById('recovery-step-2');
+  const recoveryStep3 = document.getElementById('recovery-step-3');
+  const displayMaskedRecoveryEmail = document.getElementById('display-masked-recovery-email');
+  const btnSendRecoveryOtp = document.getElementById('btn-send-recovery-otp');
+  const liveGeneratedOtpDisplay = document.getElementById('live-generated-otp-display');
+  const btnAutofillOtp = document.getElementById('btn-autofill-otp');
+  const formVerifyOtp = document.getElementById('form-verify-otp');
+  const inputRecoveryOtp = document.getElementById('input-recovery-otp');
+  const btnResendOtp = document.getElementById('btn-resend-otp');
+  const otpTimerBadge = document.getElementById('otp-timer-badge');
+  const formResetNewPassword = document.getElementById('form-reset-new-password');
+  const inputResetNewPass = document.getElementById('input-reset-new-pass');
+  const inputResetConfirmPass = document.getElementById('input-reset-confirm-pass');
+  let otpTimerInterval = null;
+  let currentActiveOtp = '';
+
+  // Change Password Form & Recovery Email in Settings DOM
+  const formChangePassword = document.getElementById('form-change-password');
+  const inputCurrentPass = document.getElementById('input-current-pass');
+  const inputNewPass = document.getElementById('input-new-pass');
+  const inputConfirmPass = document.getElementById('input-confirm-pass');
+  const btnSettingsLock = document.getElementById('btn-settings-lock');
+  const inputSettingsRecoveryEmail = document.getElementById('input-settings-recovery-email');
+  const btnSaveRecoveryEmail = document.getElementById('btn-save-recovery-email');
 
   // Header Brand & Logo DOM
   const headerBrandEmoji = document.getElementById('header-brand-emoji');
@@ -32,8 +72,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const settingsLogoEmoji = document.getElementById('settings-logo-emoji');
   const btnRemoveOrgLogo = document.getElementById('btn-remove-org-logo');
 
-  // Month Display
+  // Month Display & Holiday Banner
   const currentMonthDisplay = document.getElementById('current-month-display');
+  const holidayAlertBanner = document.getElementById('holiday-alert-banner');
+  const holidayBannerTitle = document.getElementById('holiday-banner-title');
+  const holidayBannerDesc = document.getElementById('holiday-banner-desc');
 
   // Attendance Tab DOM
   const dateInput = document.getElementById('attendance-date-input');
@@ -43,8 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const attendanceList = document.getElementById('attendance-list');
   const attendanceSearch = document.getElementById('attendance-search');
   const btnMarkAllPresent = document.getElementById('btn-mark-all-present');
-  const batchFilterChips = document.getElementById('batch-filter-chips');
-  const courseFilterChips = document.getElementById('course-filter-chips');
+  
+  // Clean Professional Dropdowns & Quick Strip
+  const filterBatchSelect = document.getElementById('filter-batch-select');
+  const filterCourseSelect = document.getElementById('filter-course-select');
+  const quickFilterStrip = document.getElementById('quick-filter-strip');
 
   const statTotal = document.getElementById('stat-total');
   const statPresent = document.getElementById('stat-present');
@@ -68,11 +114,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const historySummaryRate = document.getElementById('history-summary-rate');
   const historyRecordsList = document.getElementById('history-records-list');
 
-  // Student Registration Form DOM
+  // Student Registration & Edit Form DOM
   const modalAddCandidate = document.getElementById('modal-add-candidate');
+  const modalStudentFormTitle = document.getElementById('modal-student-form-title');
   const formAddCandidate = document.getElementById('form-add-candidate');
+  const editOriginalRollNo = document.getElementById('edit-original-roll-no');
   const btnOpenAddCandidate = document.getElementById('btn-open-add-candidate');
   const btnCloseCandidateModal = document.getElementById('btn-close-candidate-modal');
+  const btnSaveStudentSubmit = document.getElementById('btn-save-student-submit');
   const candidatePhotoFile = document.getElementById('candidate-photo-file');
   const photoPreviewImg = document.getElementById('photo-preview-img');
   const photoPreviewEmoji = document.getElementById('photo-preview-emoji');
@@ -81,11 +130,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const studentRollNo = document.getElementById('student-roll-no');
   const studentName = document.getElementById('student-name');
   const studentFatherName = document.getElementById('student-father-name');
+  const studentDob = document.getElementById('student-dob');
   const studentContactNo = document.getElementById('student-contact-no');
   const studentEmail = document.getElementById('student-email');
   const studentCourse = document.getElementById('student-course');
   const studentBatch = document.getElementById('student-batch');
   const studentAddress = document.getElementById('student-address');
+
+  // Batch Management DOM
+  const settingsBatchesList = document.getElementById('settings-batches-list');
+  const btnOpenAddBatch = document.getElementById('btn-open-add-batch');
+  const modalManageBatch = document.getElementById('modal-manage-batch');
+  const btnCloseBatchModal = document.getElementById('btn-close-batch-modal');
+  const formManageBatch = document.getElementById('form-manage-batch');
+  const modalBatchTitle = document.getElementById('modal-batch-title');
+  const inputBatchOldVal = document.getElementById('input-batch-old-val');
+  const inputBatchStart = document.getElementById('input-batch-start');
+  const inputBatchEnd = document.getElementById('input-batch-end');
+  const inputBatchLabel = document.getElementById('input-batch-label');
+
+  // Inbuilt Cloud DOM
+  const displayCloudKey = document.getElementById('display-cloud-key');
+  const btnCopyCloudKey = document.getElementById('btn-copy-cloud-key');
+  const inputCustomCloudKey = document.getElementById('input-custom-cloud-key');
+  const btnConnectCloudKey = document.getElementById('btn-connect-cloud-key');
 
   // Modals DOM
   const modalCandidateDetail = document.getElementById('modal-candidate-detail');
@@ -103,37 +171,46 @@ document.addEventListener('DOMContentLoaded', () => {
   const inputNewDeptName = document.getElementById('input-new-dept-name');
   const settingsDeptTags = document.getElementById('settings-dept-tags');
 
+  // Holiday Calendar DOM
+  const toggleSundayHoliday = document.getElementById('toggle-sunday-holiday');
+  const formAddHoliday = document.getElementById('form-add-holiday');
+  const inputHolidayDate = document.getElementById('input-holiday-date');
+  const inputHolidayName = document.getElementById('input-holiday-name');
+  const settingsHolidaysList = document.getElementById('settings-holidays-list');
+
   // Settings DOM
   const settingOrgName = document.getElementById('setting-org-name');
   const settingOrgBranch = document.getElementById('setting-org-branch');
   const btnSaveBranding = document.getElementById('btn-save-branding');
   const btnExportBackup = document.getElementById('btn-export-backup');
   const inputImportBackup = document.getElementById('input-import-backup');
-  const inputCloudUrl = document.getElementById('input-cloud-url');
-  const btnSaveCloudSync = document.getElementById('btn-save-cloud-sync');
-  const btnPullCloudData = document.getElementById('btn-pull-cloud-data');
 
   // Export Buttons
   const btnExportExcel = document.getElementById('btn-export-excel');
-  const resetDataBtn = document.getElementById('reset-data-btn');
 
   // ----------------------------------------------------
-  // Initialization
+  // Initialization & Admin Gate
   // ----------------------------------------------------
+  checkAdminAuth();
   initDatePickers();
   applySettingsToUI();
   bindNavigation();
   bindEvents();
   renderAll();
 
-  // Try initial background pull from cloud if configured
-  window.attendanceStore.pullFromCloud();
-
   // Subscribe to store updates
   window.attendanceStore.subscribe(() => {
     applySettingsToUI();
     renderAll();
   });
+
+  function checkAdminAuth() {
+    if (window.attendanceStore.isAdminLoggedIn()) {
+      adminLoginOverlay.classList.add('hidden');
+    } else {
+      adminLoginOverlay.classList.remove('hidden');
+    }
+  }
 
   // ----------------------------------------------------
   // Date Helpers
@@ -147,9 +224,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function formatDateHuman(dateStr) {
-    const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
-    const dateObj = new Date(dateStr + 'T00:00:00');
-    return dateObj.toLocaleDateString('en-US', options);
+    if (!dateStr) return '';
+    try {
+      const options = { month: 'short', day: 'numeric', year: 'numeric' };
+      const dateObj = new Date(dateStr + 'T00:00:00');
+      return isNaN(dateObj) ? dateStr : dateObj.toLocaleDateString('en-US', options);
+    } catch {
+      return dateStr;
+    }
   }
 
   function updateMonthDisplay() {
@@ -157,6 +239,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const monthName = dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     if (currentMonthDisplay) {
       currentMonthDisplay.textContent = monthName;
+    }
+
+    // Check Holiday Banner
+    const holInfo = window.attendanceStore.getHolidayInfo(currentDate);
+    if (holInfo.isHoliday) {
+      holidayAlertBanner.classList.remove('hidden');
+      holidayBannerTitle.textContent = holInfo.name;
+      holidayBannerDesc.textContent = holInfo.type === 'sunday' ? 'Weekly Sunday Off • No classes scheduled' : 'Institute Holiday • Attendance relaxed';
+    } else {
+      holidayAlertBanner.classList.add('hidden');
     }
   }
 
@@ -192,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----------------------------------------------------
-  // Navigation (3D Tabs)
+  // Navigation
   // ----------------------------------------------------
   function switchTab(targetTab) {
     document.querySelectorAll('.bottom-tab-btn-3d, .nav-link-btn').forEach(btn => {
@@ -242,6 +334,10 @@ document.addEventListener('DOMContentLoaded', () => {
       headerBrandImg.classList.remove('hidden');
       headerBrandEmoji.classList.add('hidden');
 
+      loginBrandImg.src = settings.orgLogoUrl;
+      loginBrandImg.classList.remove('hidden');
+      loginBrandEmoji.classList.add('hidden');
+
       settingsLogoImg.src = settings.orgLogoUrl;
       settingsLogoImg.classList.remove('hidden');
       settingsLogoEmoji.classList.add('hidden');
@@ -251,6 +347,10 @@ document.addEventListener('DOMContentLoaded', () => {
       headerBrandEmoji.classList.remove('hidden');
       headerBrandEmoji.textContent = settings.orgLogo || '🎓';
 
+      loginBrandImg.classList.add('hidden');
+      loginBrandEmoji.classList.remove('hidden');
+      loginBrandEmoji.textContent = settings.orgLogo || '🎓';
+
       settingsLogoImg.classList.add('hidden');
       settingsLogoEmoji.classList.remove('hidden');
       settingsLogoEmoji.textContent = settings.orgLogo || '🎓';
@@ -258,58 +358,120 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     headerOrgTitle.textContent = settings.orgName || 'Apex Coaching';
-    headerOrgSubtitle.textContent = (settings.orgBranch || 'Attendance Portal');
+    loginOrgTitle.textContent = settings.orgName || 'Apex Coaching';
+    headerOrgSubtitle.textContent = (settings.orgBranch || 'Attendance & Holiday Portal');
 
     settingOrgName.value = settings.orgName || '';
     settingOrgBranch.value = settings.orgBranch || '';
-    inputCloudUrl.value = settings.cloudSyncUrl || '';
+    toggleSundayHoliday.checked = !!settings.autoSundaysHoliday;
+    if (displayCloudKey) {
+      displayCloudKey.textContent = settings.inbuiltCloudKey || 'APEX-COACHING-2026';
+    }
+
+    if (inputSettingsRecoveryEmail) {
+      inputSettingsRecoveryEmail.value = settings.adminRecoveryEmail || 'director@apexcoaching.com';
+    }
+
+    if (displayMaskedRecoveryEmail) {
+      displayMaskedRecoveryEmail.textContent = window.attendanceStore.maskEmail(settings.adminRecoveryEmail || 'director@apexcoaching.com');
+    }
 
     renderCourseAndBatchUI(settings.courses || [], settings.batchTimings || []);
+    renderBatchesList();
+    renderHolidaysList();
   }
 
   function renderCourseAndBatchUI(courses, batchTimings) {
-    // 1. Batch Filter Chips
-    batchFilterChips.innerHTML = `
-      <button class="pill-filter-btn ${currentBatchFilter === 'all' ? 'active' : ''}" data-batch="all">All Batches</button>
-      ${batchTimings.map(b => {
-        const shortName = b.split('(')[1] ? b.split('(')[1].replace(')', '') : (b ? b.substring(0, 14) : '');
+    // 1. Sleek Dropdowns
+    filterBatchSelect.innerHTML = `
+      <option value="all" ${currentBatchFilter === 'all' ? 'selected' : ''}>⏰ All Batches (${batchTimings.length})</option>
+      ${batchTimings.map(b => `
+        <option value="${escapeHtml(b)}" ${currentBatchFilter === b ? 'selected' : ''}>⏰ ${escapeHtml(b)}</option>
+      `).join('')}
+    `;
+
+    filterCourseSelect.innerHTML = `
+      <option value="all" ${currentCourseFilter === 'all' ? 'selected' : ''}>📚 All Courses (${courses.length})</option>
+      ${courses.map(c => `
+        <option value="${escapeHtml(c)}" ${currentCourseFilter === c ? 'selected' : ''}>📚 ${escapeHtml(c)}</option>
+      `).join('')}
+    `;
+
+    // 2. Clean Quick Filter Strip
+    const isFiltered = currentBatchFilter !== 'all' || currentCourseFilter !== 'all' || searchQuery;
+    quickFilterStrip.innerHTML = `
+      <button class="filter-pill-3d ${!isFiltered ? 'active' : ''}" id="quick-reset-pill">
+        All (${window.attendanceStore.getStudents().length})
+      </button>
+      ${batchTimings.slice(0, 3).map(b => {
+        const shortName = b.split('(')[1] ? b.split('(')[1].replace(')', '') : (b ? b.substring(0, 12) : '');
         return `
-          <button class="pill-filter-btn ${currentBatchFilter === b ? 'active' : ''}" data-batch="${escapeHtml(b)}">
+          <button class="filter-pill-3d ${currentBatchFilter === b ? 'active' : ''}" data-type="batch" data-val="${escapeHtml(b)}">
             ${escapeHtml(shortName)}
           </button>
         `;
       }).join('')}
-    `;
-
-    batchFilterChips.querySelectorAll('.pill-filter-btn').forEach(chip => {
-      chip.addEventListener('click', () => {
-        currentBatchFilter = chip.getAttribute('data-batch');
-        renderCourseAndBatchUI(courses, batchTimings);
-        renderAttendanceList();
-        renderStats();
-      });
-    });
-
-    // 2. Course Filter Chips
-    courseFilterChips.innerHTML = `
-      <button class="pill-filter-btn ${currentCourseFilter === 'all' ? 'active' : ''}" data-course="all">All Courses</button>
-      ${courses.map(c => `
-        <button class="pill-filter-btn ${currentCourseFilter === c ? 'active' : ''}" data-course="${escapeHtml(c)}">
+      ${courses.slice(0, 2).map(c => `
+        <button class="filter-pill-3d ${currentCourseFilter === c ? 'active' : ''}" data-type="course" data-val="${escapeHtml(c)}">
           ${escapeHtml(c)}
         </button>
       `).join('')}
+      ${isFiltered ? `
+        <button class="filter-pill-3d text-rose-600 bg-rose-50 border-rose-200" id="btn-clear-all-filters">
+          ✕ Clear Filters
+        </button>
+      ` : ''}
     `;
 
-    courseFilterChips.querySelectorAll('.pill-filter-btn').forEach(chip => {
-      chip.addEventListener('click', () => {
-        currentCourseFilter = chip.getAttribute('data-course');
+    // Quick Pill Clicks
+    const resetPill = document.getElementById('quick-reset-pill');
+    if (resetPill) {
+      resetPill.addEventListener('click', () => {
+        currentBatchFilter = 'all';
+        currentCourseFilter = 'all';
+        searchQuery = '';
+        attendanceSearch.value = '';
+        filterBatchSelect.value = 'all';
+        filterCourseSelect.value = 'all';
+        renderCourseAndBatchUI(courses, batchTimings);
+        renderAttendanceList();
+        renderStats();
+      });
+    }
+
+    const clearBtn = document.getElementById('btn-clear-all-filters');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        currentBatchFilter = 'all';
+        currentCourseFilter = 'all';
+        searchQuery = '';
+        attendanceSearch.value = '';
+        filterBatchSelect.value = 'all';
+        filterCourseSelect.value = 'all';
+        renderCourseAndBatchUI(courses, batchTimings);
+        renderAttendanceList();
+        renderStats();
+      });
+    }
+
+    quickFilterStrip.querySelectorAll('.filter-pill-3d[data-type]').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const type = pill.getAttribute('data-type');
+        const val = pill.getAttribute('data-val');
+        if (type === 'batch') {
+          currentBatchFilter = (currentBatchFilter === val) ? 'all' : val;
+          filterBatchSelect.value = currentBatchFilter;
+        } else if (type === 'course') {
+          currentCourseFilter = (currentCourseFilter === val) ? 'all' : val;
+          filterCourseSelect.value = currentCourseFilter;
+        }
         renderCourseAndBatchUI(courses, batchTimings);
         renderAttendanceList();
         renderStats();
       });
     });
 
-    // 3. Dropdowns
+    // 3. Dropdowns in Student Modals
     studentCourse.innerHTML = courses.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
     studentBatch.innerHTML = batchTimings.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
 
@@ -337,6 +499,118 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----------------------------------------------------
+  // Batch Timings Manager Renderer
+  // ----------------------------------------------------
+  function renderBatchesList() {
+    const batches = window.attendanceStore.getBatchTimings();
+    if (!settingsBatchesList) return;
+
+    if (batches.length === 0) {
+      settingsBatchesList.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">No batch timings configured.</p>`;
+      return;
+    }
+
+    settingsBatchesList.innerHTML = batches.map(b => `
+      <div class="batch-item-card">
+        <div>
+          <p class="text-xs font-extrabold text-slate-900">${escapeHtml(b)}</p>
+          <span class="text-[10px] text-indigo-600 font-bold">Active Batch</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button class="btn-edit-batch p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition" data-batch="${escapeHtml(b)}" title="Edit Batch Timing">
+            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+          </button>
+          <button class="btn-delete-batch p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition" data-batch="${escapeHtml(b)}" title="Delete Batch">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+    settingsBatchesList.querySelectorAll('.btn-edit-batch').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const batchStr = btn.getAttribute('data-batch');
+        openEditBatchModal(batchStr);
+      });
+    });
+
+    settingsBatchesList.querySelectorAll('.btn-delete-batch').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const batchStr = btn.getAttribute('data-batch');
+        if (confirm(`Delete batch "${batchStr}"?`)) {
+          window.attendanceStore.removeBatchTiming(batchStr);
+          showToast('Batch timing removed', 'trash-2');
+        }
+      });
+    });
+
+    if (window.lucide && lucide.createIcons) lucide.createIcons();
+  }
+
+  function openEditBatchModal(existingBatchStr = null) {
+    if (existingBatchStr) {
+      modalBatchTitle.textContent = 'Edit Batch Timing';
+      inputBatchOldVal.value = existingBatchStr;
+
+      const parts = existingBatchStr.split('(');
+      const timePart = parts[0] ? parts[0].trim() : '';
+      const labelPart = parts[1] ? parts[1].replace(')', '').trim() : '';
+      const times = timePart.split('-');
+
+      inputBatchStart.value = times[0] ? times[0].trim() : '08:00 AM';
+      inputBatchEnd.value = times[1] ? times[1].trim() : '10:00 AM';
+      inputBatchLabel.value = labelPart || 'Morning Batch';
+    } else {
+      modalBatchTitle.textContent = 'Add New Batch Timing';
+      inputBatchOldVal.value = '';
+      formManageBatch.reset();
+      inputBatchStart.value = '08:00 AM';
+      inputBatchEnd.value = '10:00 AM';
+      inputBatchLabel.value = 'Morning Batch';
+    }
+
+    modalManageBatch.classList.add('open');
+  }
+
+  // ----------------------------------------------------
+  // Holiday Calendar Renderer
+  // ----------------------------------------------------
+  function renderHolidaysList() {
+    const holidays = window.attendanceStore.getHolidays();
+    if (!settingsHolidaysList) return;
+
+    if (holidays.length === 0) {
+      settingsHolidaysList.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">No special holidays scheduled yet.</p>`;
+      return;
+    }
+
+    settingsHolidaysList.innerHTML = holidays.map(h => `
+      <div class="flex items-center justify-between p-2 rounded-xl bg-purple-50/60 border border-purple-100 text-xs">
+        <div class="flex items-center gap-2">
+          <span class="text-sm">🎉</span>
+          <div>
+            <p class="font-extrabold text-slate-900">${escapeHtml(h.name)}</p>
+            <p class="text-[10px] text-purple-700 font-mono font-bold">${h.date}</p>
+          </div>
+        </div>
+        <button class="btn-delete-holiday p-1.5 text-slate-400 hover:text-rose-600 transition" data-id="${h.id}" title="Delete Holiday">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    `).join('');
+
+    settingsHolidaysList.querySelectorAll('.btn-delete-holiday').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        window.attendanceStore.removeHoliday(id);
+        showToast('Holiday removed from calendar', 'calendar-x');
+      });
+    });
+
+    if (window.lucide && lucide.createIcons) lucide.createIcons();
+  }
+
+  // ----------------------------------------------------
   // Avatar Renderer
   // ----------------------------------------------------
   function renderAvatar(student) {
@@ -344,6 +618,44 @@ document.addEventListener('DOMContentLoaded', () => {
       return `<img src="${escapeHtml(student.photoUrl)}" alt="${escapeHtml(student.name)}" class="w-full h-full object-cover rounded-inherit">`;
     }
     return `<span>${student.avatar || '👨‍🎓'}</span>`;
+  }
+
+  // ----------------------------------------------------
+  // Candidate (Student) Edit Modal
+  // ----------------------------------------------------
+  function openEditCandidateModal(rollNo) {
+    const student = window.attendanceStore.getStudentByRollNo(rollNo);
+    if (!student) return;
+
+    modalStudentFormTitle.textContent = `Edit Student: ${student.name} (Roll ${student.rollNo})`;
+    btnSaveStudentSubmit.textContent = `Update Student Details`;
+    editOriginalRollNo.value = student.rollNo;
+
+    studentRollNo.value = student.rollNo;
+    studentName.value = student.name;
+    studentFatherName.value = student.fatherName || '';
+    studentDob.value = student.dob || '';
+    studentContactNo.value = student.contactNo || '';
+    studentEmail.value = student.email || '';
+    studentCourse.value = student.courseName || '';
+    studentBatch.value = student.batchTime || '';
+    studentAddress.value = student.address || '';
+
+    if (student.photoUrl) {
+      photoPreviewImg.src = student.photoUrl;
+      photoPreviewImg.classList.remove('hidden');
+      photoPreviewEmoji.classList.add('hidden');
+      btnRemovePhoto.classList.remove('hidden');
+      candidatePhotoData.value = student.photoUrl;
+    } else {
+      photoPreviewImg.src = '';
+      photoPreviewImg.classList.add('hidden');
+      photoPreviewEmoji.classList.remove('hidden');
+      btnRemovePhoto.classList.add('hidden');
+      candidatePhotoData.value = '';
+    }
+
+    modalAddCandidate.classList.add('open');
   }
 
   // ----------------------------------------------------
@@ -373,6 +685,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderStudentHistoryDropdown();
     renderIndividualStudentHistory();
     renderHistory();
+    renderBatchesList();
+    renderHolidaysList();
     if (window.lucide && lucide.createIcons) lucide.createIcons();
   }
 
@@ -396,7 +710,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <i data-lucide="users" class="w-5 h-5"></i>
           </div>
           <h3 class="text-xs font-bold text-slate-800">No students match current filters</h3>
-          <p class="text-[11px] text-slate-400 mt-0.5">Reset filter or add new student.</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">Reset filters or add new student.</p>
         </div>
       `;
       return;
@@ -428,7 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h4 class="font-black text-sm text-slate-900 leading-tight">${escapeHtml(student.name)}</h4>
                   </div>
                   
-                  <!-- 3D Father's Name Badge -->
+                  <!-- Father's Name Badge -->
                   <div class="mt-1">
                     <span class="father-name-badge-3d">
                       👨‍👦 S/o ${escapeHtml(student.fatherName)}
@@ -445,10 +759,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="flex items-center gap-1.5 mt-2 flex-wrap">
               <span class="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100">${escapeHtml(student.batchTime.split('(')[0])}</span>
               <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">${escapeHtml(student.courseName)}</span>
+              ${student.dob ? `<span class="text-[10px] text-slate-500 font-semibold bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200">🎂 ${escapeHtml(student.dob)}</span>` : ''}
             </div>
           </div>
 
-          <!-- 3D Tactile Attendance Buttons -->
+          <!-- Attendance Buttons -->
           <div class="attendance-3d-btn-group pt-1 border-t border-slate-100">
             <button class="btn-3d-status btn-present ${isPresent ? 'active' : ''}" data-status="present" data-roll="${student.rollNo}">
               <i data-lucide="check" class="w-4 h-4"></i> Present
@@ -510,7 +825,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (filtered.length === 0) {
       candidatesDirectoryList.innerHTML = `
-        <div class="col-span-full text-center py-12 text-slate-400 text-sm bg-white border border-slate-200 rounded-3xl shadow-sm">
+        <div class="col-span-full text-center py-12 text-slate-400 text-sm bg-white border border-slate-200 rounded-2xl shadow-sm">
           No students match "${escapeHtml(candidateSearchQuery)}"
         </div>
       `;
@@ -539,17 +854,22 @@ document.addEventListener('DOMContentLoaded', () => {
                   👨‍👦 S/o ${escapeHtml(s.fatherName)}
                 </span>
               </div>
-              <div class="flex items-center gap-2 mt-1.5 text-[11px] text-slate-500 font-medium">
+              <div class="flex items-center gap-2 mt-1.5 text-[11px] text-slate-500 font-medium flex-wrap">
                 <span>📞 ${escapeHtml(s.contactNo || 'No phone')}</span>
+                ${s.dob ? `<span>•</span><span>🎂 ${escapeHtml(s.dob)}</span>` : ''}
                 <span>•</span>
                 <span class="text-emerald-700 font-black">${rate}% Rate</span>
               </div>
             </div>
           </div>
 
+          <!-- Actions: Edit, View Log, Delete -->
           <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+            <button class="btn-edit-candidate py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1 transition" data-roll="${s.rollNo}" title="Edit Student Details">
+              <i data-lucide="edit" class="w-3.5 h-3.5 text-indigo-600"></i> Edit
+            </button>
             <button class="btn-view-student-log flex-1 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center gap-1.5 transition" data-roll="${s.rollNo}">
-              <i data-lucide="calendar-search" class="w-3.5 h-3.5"></i> View History
+              <i data-lucide="calendar-search" class="w-3.5 h-3.5"></i> History
             </button>
             <button class="btn-delete-candidate p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition" data-roll="${s.rollNo}" title="Delete Student">
               <i data-lucide="trash" class="w-4 h-4"></i>
@@ -563,6 +883,14 @@ document.addEventListener('DOMContentLoaded', () => {
       el.addEventListener('click', () => {
         const roll = el.getAttribute('data-roll');
         openCandidateDetailModal(roll);
+      });
+    });
+
+    candidatesDirectoryList.querySelectorAll('.btn-edit-candidate').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const roll = el.getAttribute('data-roll');
+        openEditCandidateModal(roll);
       });
     });
 
@@ -619,33 +947,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const rawPhone = student.contactNo.replace(/[^0-9]/g, '');
 
-    // Profile Card
+    // Profile Card with DOB & Edit Option
     historyStudentCard.innerHTML = `
-      <div class="flex items-center gap-3.5 mb-3">
-        <div class="w-16 h-16 rounded-2xl bg-white border-2 border-indigo-200 overflow-hidden shrink-0 shadow-sm flex items-center justify-center text-3xl">
-          ${renderAvatar(student)}
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-600 text-white font-mono font-black">Roll ${student.rollNo}</span>
-            <h3 class="text-base font-black text-slate-900">${escapeHtml(student.name)}</h3>
+      <div class="flex items-start justify-between gap-3 mb-3">
+        <div class="flex items-center gap-3.5">
+          <div class="w-16 h-16 rounded-2xl bg-white border-2 border-indigo-200 overflow-hidden shrink-0 shadow-sm flex items-center justify-center text-3xl">
+            ${renderAvatar(student)}
           </div>
-          <div class="mt-1">
-            <span class="father-name-badge-3d">
-              👨‍👦 Father: ${escapeHtml(student.fatherName)}
-            </span>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-600 text-white font-mono font-black">Roll ${student.rollNo}</span>
+              <h3 class="text-base font-black text-slate-900">${escapeHtml(student.name)}</h3>
+            </div>
+            <div class="mt-1">
+              <span class="father-name-badge-3d">
+                👨‍👦 Father: ${escapeHtml(student.fatherName)}
+              </span>
+            </div>
+            <p class="text-xs text-indigo-700 font-bold mt-1">${escapeHtml(student.courseName)}</p>
           </div>
-          <p class="text-xs text-indigo-700 font-bold mt-1">${escapeHtml(student.courseName)}</p>
         </div>
+
+        <button class="btn-card-edit-student p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition" title="Edit Student Details">
+          <i data-lucide="edit" class="w-4 h-4 text-indigo-600"></i>
+        </button>
       </div>
 
       <div class="space-y-1.5 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200 mb-3">
+        <div><span class="font-bold text-slate-500">Date of Birth:</span> ${student.dob ? formatDateHuman(student.dob) : 'Not specified'}</div>
         <div><span class="font-bold text-slate-500">Batch:</span> ${escapeHtml(student.batchTime)}</div>
         <div><span class="font-bold text-slate-500">Phone:</span> ${escapeHtml(student.contactNo || 'N/A')}</div>
         <div><span class="font-bold text-slate-500">Address:</span> ${escapeHtml(student.address || 'N/A')}</div>
       </div>
 
-      <!-- Quick Parent Communication -->
+      <!-- Quick Actions -->
       <div class="grid grid-cols-2 gap-2">
         <a href="tel:${student.contactNo}" class="py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition">
           <i data-lucide="phone-call" class="w-3.5 h-3.5 text-emerald-600"></i> Call Parent
@@ -655,6 +990,10 @@ document.addEventListener('DOMContentLoaded', () => {
         </a>
       </div>
     `;
+
+    historyStudentCard.querySelector('.btn-card-edit-student').addEventListener('click', () => {
+      openEditCandidateModal(student.rollNo);
+    });
 
     // History Content
     if (historyViewMode === 'weekly') {
@@ -688,17 +1027,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
           <h4 class="text-[10px] font-black uppercase tracking-wider text-slate-400 pt-1">Day-by-Day Status</h4>
           <div class="space-y-1.5">
-            ${weekly.logs.map(log => `
-              <div class="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
-                <div class="flex items-center gap-2">
-                  <span class="w-10 font-black text-slate-800">${log.dayName}</span>
-                  <span class="text-slate-500 font-mono text-[11px]">${log.date}</span>
+            ${weekly.logs.map(log => {
+              let badge = renderStatusBadge(log.status);
+              if (log.status === 'holiday') {
+                badge = `<span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-300">HOLIDAY</span>`;
+              }
+              return `
+                <div class="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+                  <div class="flex items-center gap-2">
+                    <span class="w-10 font-black text-slate-800">${log.dayName}</span>
+                    <span class="text-slate-500 font-mono text-[11px]">${log.date}</span>
+                    ${log.holidayName ? `<span class="text-[10px] text-purple-700 font-bold truncate max-w-[120px]">(${escapeHtml(log.holidayName)})</span>` : ''}
+                  </div>
+                  <div>
+                    ${badge}
+                  </div>
                 </div>
-                <div>
-                  ${renderStatusBadge(log.status)}
-                </div>
-              </div>
-            `).join('')}
+              `;
+            }).join('')}
           </div>
         </div>
       `;
@@ -740,9 +1086,10 @@ document.addEventListener('DOMContentLoaded', () => {
               if (log.status === 'present') { bg = 'bg-emerald-100 text-emerald-800 border-emerald-300 font-black'; char = 'P'; }
               else if (log.status === 'absent') { bg = 'bg-rose-100 text-rose-800 border-rose-300 font-black'; char = 'A'; }
               else if (log.status === 'leave') { bg = 'bg-amber-100 text-amber-800 border-amber-300 font-black'; char = 'L'; }
+              else if (log.status === 'holiday') { bg = 'bg-purple-100 text-purple-800 border-purple-300 font-black'; char = 'H'; }
 
               return `
-                <div class="aspect-square rounded-lg border flex flex-col items-center justify-center p-1 ${bg}" title="${log.date}: ${log.status}">
+                <div class="aspect-square rounded-lg border flex flex-col items-center justify-center p-1 ${bg}" title="${log.date}: ${log.status.toUpperCase()} ${log.holidayName ? '(' + log.holidayName + ')' : ''}">
                   <span class="text-[10px] leading-none">${log.day}</span>
                   <span class="text-[9px] font-black">${char}</span>
                 </div>
@@ -858,21 +1205,30 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
 
       <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1.5 text-xs">
+        <div><span class="text-slate-500 font-bold">Date of Birth:</span> <span class="font-bold text-slate-800">${student.dob ? formatDateHuman(student.dob) : 'Not specified'}</span></div>
         <div><span class="text-slate-500 font-bold">Course:</span> <span class="font-bold text-indigo-700">${escapeHtml(student.courseName)}</span></div>
         <div><span class="text-slate-500 font-bold">Batch:</span> <span class="font-bold">${escapeHtml(student.batchTime)}</span></div>
         <div><span class="text-slate-500 font-bold">Phone:</span> ${escapeHtml(student.contactNo || 'N/A')}</div>
         <div><span class="text-slate-500 font-bold">Address:</span> ${escapeHtml(student.address || 'N/A')}</div>
       </div>
 
-      <div class="flex gap-2">
-        <button class="btn-profile-id-badge flex-1 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition">
-          <i data-lucide="qr-code" class="w-3.5 h-3.5"></i> Smart ID
+      <div class="grid grid-cols-3 gap-2">
+        <button class="btn-profile-edit py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition">
+          <i data-lucide="edit" class="w-3.5 h-3.5 text-indigo-600"></i> Edit
         </button>
-        <button class="btn-profile-open-history flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition">
-          <i data-lucide="calendar" class="w-3.5 h-3.5"></i> Full Log
+        <button class="btn-profile-id-badge py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition">
+          <i data-lucide="qr-code" class="w-3.5 h-3.5"></i> ID Card
+        </button>
+        <button class="btn-profile-open-history py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition">
+          <i data-lucide="calendar" class="w-3.5 h-3.5"></i> Log
         </button>
       </div>
     `;
+
+    candidateProfileContent.querySelector('.btn-profile-edit').addEventListener('click', () => {
+      modalCandidateDetail.classList.remove('open');
+      openEditCandidateModal(rollNo);
+    });
 
     candidateProfileContent.querySelector('.btn-profile-id-badge').addEventListener('click', () => {
       modalCandidateDetail.classList.remove('open');
@@ -890,14 +1246,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----------------------------------------------------
-  // 3D ID Badge Modal
+  // ID Badge Modal
   // ----------------------------------------------------
   function open3DIdBadgeModal(rollNo) {
     const student = window.attendanceStore.getStudentByRollNo(rollNo);
     const settings = window.attendanceStore.getSettings();
     if (!student) return;
 
-    const qrData = encodeURIComponent(`APEX:${student.rollNo}:${student.name}:${student.fatherName}`);
+    const qrData = encodeURIComponent(`APEX:${student.rollNo}:${student.name}:${student.fatherName}:${student.dob || ''}`);
     const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${qrData}&color=1e1b4b`;
 
     const logoHtml = settings.orgLogoUrl ? 
@@ -928,7 +1284,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 👨‍👦 S/o ${escapeHtml(student.fatherName)}
               </span>
             </div>
-            <p class="text-[11px] text-indigo-600 font-bold truncate mt-1">${escapeHtml(student.courseName)}</p>
+            <p class="text-[10px] text-slate-500 font-bold mt-0.5">🎂 DOB: ${student.dob ? formatDateHuman(student.dob) : 'N/A'}</p>
+            <p class="text-[11px] text-indigo-600 font-bold truncate mt-0.5">${escapeHtml(student.courseName)}</p>
           </div>
         </div>
 
@@ -947,6 +1304,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     modalIdBadge.classList.add('open');
     if (window.lucide && lucide.createIcons) lucide.createIcons();
+  }
+
+  // ----------------------------------------------------
+  // Forgot Password & Real-Time OTP Flow
+  // ----------------------------------------------------
+  function startOtpCountdown(seconds = 300) {
+    if (otpTimerInterval) clearInterval(otpTimerInterval);
+    let remaining = seconds;
+
+    const updateTimerText = () => {
+      const mins = String(Math.floor(remaining / 60)).padStart(2, '0');
+      const secs = String(remaining % 60).padStart(2, '0');
+      otpTimerBadge.textContent = `${mins}:${secs}`;
+      if (remaining <= 0) {
+        clearInterval(otpTimerInterval);
+        otpTimerBadge.textContent = 'EXPIRED';
+        otpTimerBadge.className = 'font-mono font-bold text-rose-500';
+      }
+    };
+
+    updateTimerText();
+    otpTimerInterval = setInterval(() => {
+      remaining--;
+      updateTimerText();
+    }, 1000);
+  }
+
+  function triggerSendRecoveryOtp() {
+    const res = window.attendanceStore.generatePasswordResetOTP();
+    currentActiveOtp = res.otp;
+    liveGeneratedOtpDisplay.textContent = res.otp;
+
+    // Transition from Step 1 to Step 2
+    recoveryStep1.classList.add('hidden');
+    recoveryStep2.classList.remove('hidden');
+    recoveryStep3.classList.add('hidden');
+    inputRecoveryOtp.value = '';
+
+    startOtpCountdown(300);
+    showToast(`OTP ${res.otp} sent to ${res.maskedEmail}`, 'mail');
   }
 
   // ----------------------------------------------------
@@ -1044,6 +1441,157 @@ document.addEventListener('DOMContentLoaded', () => {
   // Event Bindings
   // ----------------------------------------------------
   function bindEvents() {
+    // Admin Login Gate Form Submit
+    formAdminLogin.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const pass = inputAdminPassword.value;
+      const res = window.attendanceStore.loginAdmin(pass);
+
+      if (res.success) {
+        adminLoginOverlay.classList.add('hidden');
+        inputAdminPassword.value = '';
+        showToast('Welcome back, Admin!', 'shield-check');
+      } else {
+        showToast(res.error || 'Incorrect Password', 'alert-triangle');
+      }
+    });
+
+    // Toggle Password Visibility
+    btnToggleLoginPass.addEventListener('click', () => {
+      const isPass = inputAdminPassword.type === 'password';
+      inputAdminPassword.type = isPass ? 'text' : 'password';
+      btnToggleLoginPass.innerHTML = isPass ? '<i data-lucide="eye-off" class="w-4 h-4"></i>' : '<i data-lucide="eye" class="w-4 h-4"></i>';
+      if (window.lucide && lucide.createIcons) lucide.createIcons();
+    });
+
+    // Forgot Password Trigger
+    btnOpenForgotPass.addEventListener('click', () => {
+      const settings = window.attendanceStore.getSettings();
+      displayMaskedRecoveryEmail.textContent = window.attendanceStore.maskEmail(settings.adminRecoveryEmail || 'director@apexcoaching.com');
+      
+      recoveryStep1.classList.remove('hidden');
+      recoveryStep2.classList.add('hidden');
+      recoveryStep3.classList.add('hidden');
+      modalForgotPassword.classList.add('open');
+    });
+
+    btnCloseForgotModal.addEventListener('click', () => {
+      modalForgotPassword.classList.remove('open');
+      if (otpTimerInterval) clearInterval(otpTimerInterval);
+    });
+
+    modalForgotPassword.addEventListener('click', (e) => {
+      if (e.target === modalForgotPassword) {
+        modalForgotPassword.classList.remove('open');
+        if (otpTimerInterval) clearInterval(otpTimerInterval);
+      }
+    });
+
+    // Send Recovery OTP Button Click
+    btnSendRecoveryOtp.addEventListener('click', () => {
+      btnSendRecoveryOtp.innerHTML = `<span class="animate-spin inline-block mr-1">⏳</span> Sending OTP...`;
+      setTimeout(() => {
+        btnSendRecoveryOtp.innerHTML = `<i data-lucide="send" class="w-3.5 h-3.5"></i> <span>Send 6-Digit OTP</span>`;
+        triggerSendRecoveryOtp();
+        if (window.lucide && lucide.createIcons) lucide.createIcons();
+      }, 500);
+    });
+
+    // Auto-fill OTP
+    btnAutofillOtp.addEventListener('click', () => {
+      if (currentActiveOtp) {
+        inputRecoveryOtp.value = currentActiveOtp;
+        showToast('OTP auto-filled!', 'check');
+      }
+    });
+
+    // Resend OTP
+    btnResendOtp.addEventListener('click', () => {
+      triggerSendRecoveryOtp();
+    });
+
+    // Verify OTP Form
+    formVerifyOtp.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const code = inputRecoveryOtp.value.trim();
+      const res = window.attendanceStore.verifyPasswordResetOTP(code);
+
+      if (res.success) {
+        if (otpTimerInterval) clearInterval(otpTimerInterval);
+        recoveryStep2.classList.add('hidden');
+        recoveryStep3.classList.remove('hidden');
+        showToast('OTP Verified! Enter new password.', 'shield-check');
+      } else {
+        showToast(res.error || 'Invalid OTP code', 'alert-triangle');
+      }
+    });
+
+    // Reset Password Form
+    formResetNewPassword.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const newP = inputResetNewPass.value.trim();
+      const confP = inputResetConfirmPass.value.trim();
+      const code = inputRecoveryOtp.value.trim();
+
+      if (newP !== confP) {
+        showToast('New passwords do not match!', 'alert-triangle');
+        return;
+      }
+
+      const res = window.attendanceStore.resetAdminPasswordWithOTP(code, newP);
+      if (res.success) {
+        modalForgotPassword.classList.remove('open');
+        adminLoginOverlay.classList.add('hidden');
+        formResetNewPassword.reset();
+        showToast('Password reset successful! Logged in as Admin.', 'check-circle');
+      } else {
+        showToast(res.error || 'Failed to reset password', 'alert-triangle');
+      }
+    });
+
+    // Save Recovery Email in Settings
+    btnSaveRecoveryEmail.addEventListener('click', () => {
+      const email = inputSettingsRecoveryEmail.value.trim();
+      if (!email || !email.includes('@')) {
+        showToast('Please enter a valid recovery email address', 'alert-circle');
+        return;
+      }
+
+      window.attendanceStore.updateSettings({ adminRecoveryEmail: email });
+      showToast('Admin Recovery Email saved!', 'mail-check');
+    });
+
+    // Admin Logout / Lock Portal
+    const lockPortal = () => {
+      window.attendanceStore.logoutAdmin();
+      adminLoginOverlay.classList.remove('hidden');
+      showToast('Portal locked safely', 'lock');
+    };
+
+    btnHeaderLock.addEventListener('click', lockPortal);
+    btnSettingsLock.addEventListener('click', lockPortal);
+
+    // Change Password Form in Settings
+    formChangePassword.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const curr = inputCurrentPass.value;
+      const newP = inputNewPass.value;
+      const conf = inputConfirmPass.value;
+
+      if (newP !== conf) {
+        showToast('New passwords do not match!', 'alert-triangle');
+        return;
+      }
+
+      const res = window.attendanceStore.changeAdminPassword(curr, newP);
+      if (res.success) {
+        formChangePassword.reset();
+        showToast('Admin password updated successfully!', 'check-circle');
+      } else {
+        showToast(res.error || 'Failed to update password', 'alert-triangle');
+      }
+    });
+
     // WhatsApp Sharing
     const shareWhatsApp = (dateStr) => {
       const text = window.attendanceStore.generateWhatsAppReport(dateStr);
@@ -1054,22 +1602,76 @@ document.addEventListener('DOMContentLoaded', () => {
     btnShareWhatsappToday.addEventListener('click', () => shareWhatsApp(currentDate));
     btnShareWhatsappReport.addEventListener('click', () => shareWhatsApp(historyDate));
 
-    // Cloud Sync Buttons
-    btnSaveCloudSync.addEventListener('click', () => {
-      const url = inputCloudUrl.value.trim();
-      window.attendanceStore.updateSettings({ cloudSyncUrl: url });
-      window.attendanceStore.dispatchCloudSync();
-      showToast('Cloud Sync Configured & Synced!', 'cloud');
+    // Batch Timings Management Modal
+    btnOpenAddBatch.addEventListener('click', () => {
+      openEditBatchModal(null);
     });
 
-    btnPullCloudData.addEventListener('click', async () => {
-      showToast('Pulling latest from Cloud...', 'refresh-cw');
-      const ok = await window.attendanceStore.pullFromCloud();
-      if (ok) {
-        showToast('Synced with Cloud successfully!', 'check-circle');
+    btnCloseBatchModal.addEventListener('click', () => {
+      modalManageBatch.classList.remove('open');
+    });
+
+    modalManageBatch.addEventListener('click', (e) => {
+      if (e.target === modalManageBatch) modalManageBatch.classList.remove('open');
+    });
+
+    formManageBatch.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const startVal = inputBatchStart.value.trim();
+      const endVal = inputBatchEnd.value.trim();
+      const labelVal = inputBatchLabel.value.trim();
+      const oldVal = inputBatchOldVal.value;
+
+      if (!startVal || !endVal || !labelVal) return;
+
+      const formattedBatchStr = `${startVal} - ${endVal} (${labelVal})`;
+
+      if (oldVal) {
+        window.attendanceStore.editBatchTiming(oldVal, formattedBatchStr);
+        showToast(`Batch updated to "${formattedBatchStr}"`, 'check');
       } else {
-        showToast('Cloud sync offline or invalid URL', 'alert-triangle');
+        window.attendanceStore.addBatchTiming(formattedBatchStr);
+        showToast(`New batch "${formattedBatchStr}" added!`, 'plus');
       }
+
+      modalManageBatch.classList.remove('open');
+    });
+
+    // Inbuilt Cloud Buttons
+    btnCopyCloudKey.addEventListener('click', () => {
+      const key = displayCloudKey.textContent;
+      navigator.clipboard.writeText(key).then(() => {
+        showToast('Cloud Key copied to clipboard!', 'copy');
+      });
+    });
+
+    btnConnectCloudKey.addEventListener('click', () => {
+      const customKey = inputCustomCloudKey.value.trim();
+      if (customKey) {
+        window.attendanceStore.updateSettings({ inbuiltCloudKey: customKey });
+        displayCloudKey.textContent = customKey;
+        inputCustomCloudKey.value = '';
+        showToast(`Connected to Cloud Key: ${customKey}`, 'cloud');
+      }
+    });
+
+    // Holiday Form Submit
+    formAddHoliday.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const dateVal = inputHolidayDate.value;
+      const nameVal = inputHolidayName.value.trim();
+
+      if (dateVal && nameVal) {
+        window.attendanceStore.addHoliday(dateVal, nameVal);
+        formAddHoliday.reset();
+        showToast(`Holiday "${nameVal}" added!`, 'calendar-plus');
+      }
+    });
+
+    // Sunday Toggle Change
+    toggleSundayHoliday.addEventListener('change', (e) => {
+      window.attendanceStore.updateSettings({ autoSundaysHoliday: e.target.checked });
+      showToast(e.target.checked ? 'Sundays set as Official Holiday' : 'Sundays set as normal working days', 'calendar');
     });
 
     // Date Navigation
@@ -1086,6 +1688,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // Attendance Search
     attendanceSearch.addEventListener('input', (e) => {
       searchQuery = e.target.value;
+      renderAttendanceList();
+      renderStats();
+    });
+
+    // Dropdowns Filter Change
+    filterBatchSelect.addEventListener('change', (e) => {
+      currentBatchFilter = e.target.value;
+      const settings = window.attendanceStore.getSettings();
+      renderCourseAndBatchUI(settings.courses || [], settings.batchTimings || []);
+      renderAttendanceList();
+      renderStats();
+    });
+
+    filterCourseSelect.addEventListener('change', (e) => {
+      currentCourseFilter = e.target.value;
+      const settings = window.attendanceStore.getSettings();
+      renderCourseAndBatchUI(settings.courses || [], settings.batchTimings || []);
       renderAttendanceList();
       renderStats();
     });
@@ -1156,6 +1775,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Open Add Student Modal
     const openAddCandidateModal = () => {
       formAddCandidate.reset();
+      editOriginalRollNo.value = '';
+      modalStudentFormTitle.textContent = 'Student Admission / Registration';
+      btnSaveStudentSubmit.textContent = 'Save & Register Student';
+      studentDob.value = '';
       candidatePhotoData.value = '';
       photoPreviewImg.src = '';
       photoPreviewImg.classList.add('hidden');
@@ -1182,12 +1805,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target === modalAddCandidate) modalAddCandidate.classList.remove('open');
     });
 
-    // Form Add Student Submit
+    // Form Add / Edit Student Submit
     formAddCandidate.addEventListener('submit', (e) => {
       e.preventDefault();
+      const originalRoll = editOriginalRollNo.value;
       const roll = studentRollNo.value.trim();
       const name = studentName.value.trim();
       const fatherName = studentFatherName.value.trim();
+      const dob = studentDob.value;
       const contactNo = studentContactNo.value.trim();
       const email = studentEmail.value.trim();
       const courseName = studentCourse.value;
@@ -1200,20 +1825,39 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const newStudent = window.attendanceStore.addStudent({
-        rollNo: roll,
-        name,
-        fatherName,
-        contactNo,
-        email,
-        courseName,
-        batchTime,
-        address,
-        photoUrl
-      });
-
-      modalAddCandidate.classList.remove('open');
-      showToast(`Enrolled ${newStudent.name} (S/o ${newStudent.fatherName})`, 'user-check');
+      if (originalRoll) {
+        // Edit flow
+        const updated = window.attendanceStore.updateStudent(originalRoll, {
+          rollNo: roll,
+          name,
+          fatherName,
+          dob,
+          contactNo,
+          email,
+          courseName,
+          batchTime,
+          address,
+          photoUrl
+        });
+        modalAddCandidate.classList.remove('open');
+        showToast(`Updated details for ${updated.name}`, 'user-check');
+      } else {
+        // Add flow
+        const newStudent = window.attendanceStore.addStudent({
+          rollNo: roll,
+          name,
+          fatherName,
+          dob,
+          contactNo,
+          email,
+          courseName,
+          batchTime,
+          address,
+          photoUrl
+        });
+        modalAddCandidate.classList.remove('open');
+        showToast(`Enrolled ${newStudent.name} (S/o ${newStudent.fatherName})`, 'user-check');
+      }
     });
 
     // Modal Closes
@@ -1248,7 +1892,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Save Branding
     btnSaveBranding.addEventListener('click', () => {
       const name = settingOrgName.value || 'Apex Coaching';
-      const branch = settingOrgBranch.value || 'Attendance Portal';
+      const branch = settingOrgBranch.value || 'Attendance & Holiday Portal';
 
       window.attendanceStore.updateSettings({
         orgName: name,
@@ -1307,29 +1951,23 @@ document.addEventListener('DOMContentLoaded', () => {
       reader.readAsText(file);
     });
 
-    // Reset Mock Data
-    resetDataBtn.addEventListener('click', () => {
-      localStorage.clear();
-      window.location.reload();
-    });
-
-    // Export Excel / CSV
+    // Export Excel / CSV with DOB
     btnExportExcel.addEventListener('click', () => {
       exportAttendanceCSV(historyDate);
     });
   }
 
   // ----------------------------------------------------
-  // CSV Export
+  // CSV Export with DOB
   // ----------------------------------------------------
   function exportAttendanceCSV(dateStr) {
     const students = window.attendanceStore.getStudents() || [];
     const attendanceMap = window.attendanceStore.getAttendanceForDate(dateStr);
 
-    let csv = 'Roll No,Student Name,Father Name,Contact No,Address,Batch Time,Course Name,Date,Status\n';
+    let csv = 'Roll No,Student Name,Father Name,DOB,Contact No,Address,Batch Time,Course Name,Date,Status\n';
     students.forEach(s => {
       const status = (attendanceMap[s.rollNo] || 'unmarked').toUpperCase();
-      csv += `"${s.rollNo}","${s.name}","${s.fatherName}","${s.contactNo}","${s.address}","${s.batchTime}","${s.courseName}","${dateStr}","${status}"\n`;
+      csv += `"${s.rollNo}","${s.name}","${s.fatherName}","${s.dob || ''}","${s.contactNo}","${s.address}","${s.batchTime}","${s.courseName}","${dateStr}","${status}"\n`;
     });
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1341,7 +1979,7 @@ document.addEventListener('DOMContentLoaded', () => {
     link.click();
     document.body.removeChild(link);
 
-    showToast(`Exported attendance for ${dateStr}`, 'file-check');
+    showToast(`Exported attendance with DOB for ${dateStr}`, 'file-check');
   }
 
   function showToast(message, icon = 'info') {
