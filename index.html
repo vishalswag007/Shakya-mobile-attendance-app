@@ -206,7 +206,7 @@
           </div>
           <div class="flex items-center gap-1.5">
             <span id="cloud-status-indicator" class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-200 font-extrabold border border-emerald-400/30 flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Firebase Live
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Cloud Auto-Sync
             </span>
             <span class="text-[9px] px-2 py-0.5 rounded-full bg-white/20 font-extrabold border border-white/30">Session 2026-27</span>
           </div>
@@ -477,23 +477,23 @@
           </div>
         </div>
 
-        <!-- 3. Google Firebase Cloud Sync Status -->
+        <!-- 3. Google Firebase Realtime Database Status -->
         <div class="bg-gradient-to-br from-indigo-50 to-white border-2 border-indigo-200 rounded-2xl p-3.5 shadow-sm space-y-2.5">
           <div class="flex items-center justify-between">
             <span class="text-xs font-black text-indigo-900 flex items-center gap-1.5">
-              <i data-lucide="cloud" class="w-4 h-4 text-indigo-600"></i> Google Firebase Firestore (Auto-Sync)
+              <i data-lucide="cloud" class="w-4 h-4 text-indigo-600"></i> Google Firebase Realtime Cloud Database
             </span>
-            <span class="text-[9px] px-2 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded-full border border-emerald-300">CONNECTED & ACTIVE</span>
+            <span class="text-[9px] px-2 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded-full border border-emerald-300">AUTO-CONNECTED</span>
           </div>
-          <p class="text-[11px] text-slate-600">Your attendance and student data is continuously saved to Google Cloud Firestore (Project: <code class="font-mono text-indigo-800 font-bold">shakya-attendance</code>).</p>
+          <p class="text-[11px] text-slate-600">Connected to: <code class="font-mono text-indigo-800 font-bold">https://shakya-attendance-default-rtdb.firebaseio.com</code>. Your data updates in real-time across all phones!</p>
 
           <div class="bg-white p-3 rounded-xl border border-indigo-100 flex items-center justify-between gap-2">
             <div>
-              <span class="text-[9px] uppercase font-bold text-slate-400 block">Institute Cloud Key</span>
-              <span id="display-cloud-key" class="text-xs font-black font-mono text-indigo-900">SHAKYA-ACADEMY-2026</span>
+              <span class="text-[9px] uppercase font-bold text-slate-400 block">Institute Cloud ID</span>
+              <span id="display-cloud-key" class="text-xs font-black font-mono text-indigo-900">SHAKYA-ATTENDANCE</span>
             </div>
             <button id="btn-copy-cloud-key" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold flex items-center gap-1 border border-indigo-200 transition">
-              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Key
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Link
             </button>
           </div>
         </div>
@@ -802,9 +802,9 @@
   <!-- Toast Container -->
   <div id="toast-container" class="toast-container-3d"></div>
 
-  <!-- Firebase Compat SDK for Zero-Build Real-Time Web Apps -->
+  <!-- Google Firebase Realtime Database SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
   <!-- Relative Path Scripts for GitHub Pages -->
   <script src="./js/store.js"></script>

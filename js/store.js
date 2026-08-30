@@ -1,7 +1,6 @@
 /**
- * Apex / Shakya Coaching Institute - Data Store Engine with Google Firebase Firestore
- * Features: Real-time Multi-Device Cloud Sync, Offline-first Fallback, Admin Authentication,
- * Email OTP Recovery, Candidate DOB, Batch Manager, Holiday Calendar.
+ * Shakya Coaching Institute - Data Store Engine with Google Firebase Realtime Database
+ * Real-time Auto-Sync across all phones, offline fallback, Admin Authentication, Email OTP Recovery.
  */
 
 const STORAGE_KEYS = {
@@ -17,12 +16,15 @@ const STORAGE_KEYS = {
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAGYXGuytbiEs-vjCzrCA1jZQyM2R7PxMw",
   authDomain: "shakya-attendance.firebaseapp.com",
+  databaseURL: "https://shakya-attendance-default-rtdb.firebaseio.com",
   projectId: "shakya-attendance",
   storageBucket: "shakya-attendance.firebasestorage.app",
   messagingSenderId: "574539374438",
   appId: "1:574539374438:web:e00d262a2a6ba4aa9732a7",
   measurementId: "G-VN4F7RNWQM"
 };
+
+const FIREBASE_REST_URL = "https://shakya-attendance-default-rtdb.firebaseio.com/shakya_attendance.json";
 
 const DEFAULT_COURSES = [
   'JEE Mains & Advanced',
@@ -164,10 +166,10 @@ const INITIAL_STUDENTS = [
 class AttendanceStore {
   constructor() {
     this.listeners = [];
-    this.firestoreDb = null;
-    this.cloudConnected = false;
+    this.firebaseDb = null;
     this.isSyncing = false;
-    
+    this.cloudConnected = false;
+
     this.init();
     this.initFirebase();
   }
@@ -199,94 +201,150 @@ class AttendanceStore {
   }
 
   // ----------------------------------------------------
-  // Google Firebase Firestore Real-Time Integration
+  // Firebase Realtime Database Auto-Sync Engine
   // ----------------------------------------------------
   initFirebase() {
+    // 1. If Firebase SDK is loaded
     if (typeof firebase !== 'undefined' && firebase.initializeApp) {
       try {
         if (!firebase.apps.length) {
           firebase.initializeApp(FIREBASE_CONFIG);
         }
-        this.firestoreDb = firebase.firestore();
+        this.firebaseDb = firebase.database();
         this.cloudConnected = true;
-        console.log('⚡ Firebase Cloud Firestore Initialized Successfully!');
-        
-        this.listenToFirestoreRealtime();
+        console.log('⚡ Firebase Realtime Database Initialized!');
+        this.listenToFirebaseRealtime();
       } catch (err) {
-        console.warn('Firebase init notice:', err);
+        console.warn('Firebase SDK init warning, switching to REST sync:', err);
+        this.startRestPollingSync();
       }
     } else {
-      console.log('Firebase SDK running in local storage fallback mode.');
+      // 2. Direct High-Speed REST API Sync fallback
+      this.startRestPollingSync();
     }
   }
 
-  listenToFirestoreRealtime() {
-    if (!this.firestoreDb) return;
+  listenToFirebaseRealtime() {
+    if (!this.firebaseDb) return;
 
     try {
-      const docRef = this.firestoreDb.collection('institutes').doc('shakya_attendance_data');
-
-      // Real-time snapshot listener: any phone update reflects instantly on all devices
-      docRef.onSnapshot((doc) => {
-        if (doc.exists) {
-          const cloudData = doc.data();
-          if (cloudData && !this.isSyncing) {
-            if (cloudData.students && Array.isArray(cloudData.students)) {
-              localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(cloudData.students));
-            }
-            if (cloudData.attendance && typeof cloudData.attendance === 'object') {
-              localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(cloudData.attendance));
-            }
-            if (cloudData.holidays && Array.isArray(cloudData.holidays)) {
-              localStorage.setItem(STORAGE_KEYS.HOLIDAYS, JSON.stringify(cloudData.holidays));
-            }
-            if (cloudData.settings && typeof cloudData.settings === 'object') {
-              const currentSettings = this.getSettings();
-              localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify({
-                ...currentSettings,
-                ...cloudData.settings,
-                // keep local admin password safe
-                adminPassword: currentSettings.adminPassword
-              }));
-            }
-
-            localStorage.setItem(STORAGE_KEYS.LAST_CLOUD_SYNC, new Date().toISOString());
-            this.listeners.forEach(fn => fn());
-          }
-        } else {
-          // If first time, seed Firestore with initial data
-          this.pushToFirestore();
+      const ref = this.firebaseDb.ref('shakya_attendance');
+      ref.on('value', (snapshot) => {
+        const cloudData = snapshot.val();
+        if (cloudData && !this.isSyncing) {
+          this.applyCloudPayload(cloudData);
+        } else if (!cloudData) {
+          // If remote is empty, seed initial data to cloud
+          this.pushToCloud();
         }
       }, (error) => {
-        console.warn('Firestore real-time sync notice (Please ensure Firestore is created in test mode):', error);
+        console.warn('Firebase Realtime Database Permission/Rule Notice:', error);
+        // Fallback to REST fetch
+        this.fetchFromCloudRest();
       });
     } catch (e) {
-      console.warn('Firestore listener setup exception:', e);
+      console.warn('Realtime listener error:', e);
+      this.fetchFromCloudRest();
     }
   }
 
-  async pushToFirestore() {
-    if (!this.firestoreDb) return;
+  async pushToCloud() {
+    const payload = {
+      settings: this.getSettings(),
+      students: this.getStudents(),
+      attendance: this.getAllAttendanceRecords(),
+      holidays: this.getHolidays(),
+      updatedAt: new Date().toISOString()
+    };
 
+    // 1. Try Firebase SDK
+    if (this.firebaseDb) {
+      try {
+        this.isSyncing = true;
+        await this.firebaseDb.ref('shakya_attendance').set(payload);
+        localStorage.setItem(STORAGE_KEYS.LAST_CLOUD_SYNC, new Date().toISOString());
+      } catch (err) {
+        // Fallback to REST PUT
+        this.pushToCloudRest(payload);
+      } finally {
+        setTimeout(() => { this.isSyncing = false; }, 400);
+      }
+    } else {
+      // 2. Direct REST PUT
+      this.pushToCloudRest(payload);
+    }
+  }
+
+  async pushToCloudRest(payload) {
     try {
       this.isSyncing = true;
-      const payload = {
-        settings: this.getSettings(),
-        students: this.getStudents(),
-        attendance: this.getAllAttendanceRecords(),
-        holidays: this.getHolidays(),
-        updatedAt: new Date().toISOString(),
-        cloudKey: 'SHAKYA-ACADEMY-2026'
-      };
-
-      await this.firestoreDb.collection('institutes').doc('shakya_attendance_data').set(payload, { merge: true });
+      await fetch(FIREBASE_REST_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
       localStorage.setItem(STORAGE_KEYS.LAST_CLOUD_SYNC, new Date().toISOString());
-    } catch (err) {
-      console.warn('Firestore push notice:', err);
+    } catch (e) {
+      console.warn('REST push notice:', e);
     } finally {
-      setTimeout(() => {
-        this.isSyncing = false;
-      }, 500);
+      setTimeout(() => { this.isSyncing = false; }, 400);
+    }
+  }
+
+  async fetchFromCloudRest() {
+    try {
+      const res = await fetch(FIREBASE_REST_URL);
+      if (res.ok) {
+        const cloudData = await res.json();
+        if (cloudData && typeof cloudData === 'object') {
+          this.applyCloudPayload(cloudData);
+        }
+      }
+    } catch (e) {
+      console.warn('REST fetch notice:', e);
+    }
+  }
+
+  startRestPollingSync() {
+    // Initial fetch from cloud
+    this.fetchFromCloudRest();
+
+    // Check for updates every 15 seconds across devices
+    setInterval(() => {
+      if (!this.isSyncing) {
+        this.fetchFromCloudRest();
+      }
+    }, 15000);
+  }
+
+  applyCloudPayload(cloudData) {
+    let changed = false;
+
+    if (cloudData.students && Array.isArray(cloudData.students)) {
+      localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(cloudData.students));
+      changed = true;
+    }
+    if (cloudData.attendance && typeof cloudData.attendance === 'object') {
+      localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(cloudData.attendance));
+      changed = true;
+    }
+    if (cloudData.holidays && Array.isArray(cloudData.holidays)) {
+      localStorage.setItem(STORAGE_KEYS.HOLIDAYS, JSON.stringify(cloudData.holidays));
+      changed = true;
+    }
+    if (cloudData.settings && typeof cloudData.settings === 'object') {
+      const current = this.getSettings();
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify({
+        ...current,
+        ...cloudData.settings,
+        adminPassword: current.adminPassword // preserve local admin password
+      }));
+      changed = true;
+    }
+
+    if (changed) {
+      localStorage.setItem(STORAGE_KEYS.LAST_CLOUD_SYNC, new Date().toISOString());
+      this.listeners.forEach(fn => fn());
     }
   }
 
@@ -299,7 +357,7 @@ class AttendanceStore {
 
   notify() {
     this.listeners.forEach(fn => fn());
-    this.pushToFirestore();
+    this.pushToCloud();
   }
 
   // ----------------------------------------------------
@@ -938,7 +996,7 @@ class AttendanceStore {
   // ----------------------------------------------------
   exportFullDataJSON() {
     return JSON.stringify({
-      version: '4.0-firebase-cloud',
+      version: '4.0-firebase-rtdb',
       exportedAt: new Date().toISOString(),
       settings: this.getSettings(),
       students: this.getStudents(),
