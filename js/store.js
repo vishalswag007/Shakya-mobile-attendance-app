@@ -182,6 +182,24 @@ class AttendanceStore {
     this.initFirebase();
   }
 
+  getTodayDateStr() {
+    try {
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      return formatter.format(new Date());
+    } catch {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+  }
+
   init() {
     if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
       localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
@@ -193,7 +211,7 @@ class AttendanceStore {
       localStorage.setItem(STORAGE_KEYS.HOLIDAYS, JSON.stringify(DEFAULT_HOLIDAYS));
     }
     if (!localStorage.getItem(STORAGE_KEYS.ATTENDANCE)) {
-      const today = new Date().toISOString().split('T')[0];
+      const today = this.getTodayDateStr();
       const initialAttendance = {
         [today]: {
           '101': 'present',
@@ -636,8 +654,9 @@ class AttendanceStore {
 
     const settings = this.getSettings();
     if (settings.autoSundaysHoliday) {
-      const d = new Date(dateStr + 'T00:00:00');
-      if (d.getDay() === 0) {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const dayObj = new Date(y, m - 1, d);
+      if (dayObj.getDay() === 0) { // 0 is Sunday
         return { isHoliday: true, name: 'Sunday (Weekly Off)', type: 'sunday' };
       }
     }
@@ -700,7 +719,7 @@ class AttendanceStore {
       role: 'Student',
       avatar: studentData.avatar || '👨‍🎓',
       photoUrl: studentData.photoUrl || null,
-      createdAt: new Date().toISOString().split('T')[0]
+      createdAt: this.getTodayDateStr()
     };
 
     if (existingIndex >= 0) {
@@ -853,12 +872,13 @@ class AttendanceStore {
   }
 
   getStudentHistoryWeekly(rollNo, referenceDateStr) {
-    const ref = new Date(referenceDateStr + 'T00:00:00');
-    const dayOfWeek = ref.getDay();
+    const [y, m, d] = (referenceDateStr || this.getTodayDateStr()).split('-').map(Number);
+    const ref = new Date(y, m - 1, d);
+    const dayOfWeek = ref.getDay(); // 0: Sun, 1: Mon, ..., 6: Sat
+    // Monday as the starting day of the week
     const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     
-    const monday = new Date(ref);
-    monday.setDate(ref.getDate() + mondayOffset);
+    const monday = new Date(y, m - 1, d + mondayOffset);
 
     const weekDays = [];
     const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -866,9 +886,12 @@ class AttendanceStore {
     let present = 0, absent = 0, leave = 0, holidaysCount = 0;
 
     for (let i = 0; i < 7; i++) {
-      const current = new Date(monday);
-      current.setDate(monday.getDate() + i);
-      const dStr = current.toISOString().split('T')[0];
+      const cur = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+      const cy = cur.getFullYear();
+      const cm = String(cur.getMonth() + 1).padStart(2, '0');
+      const cd = String(cur.getDate()).padStart(2, '0');
+      const dStr = `${cy}-${cm}-${cd}`;
+
       const holInfo = this.getHolidayInfo(dStr);
       const att = this.getAttendanceForDate(dStr);
       let status = att[rollNo] || 'unmarked';
@@ -888,14 +911,16 @@ class AttendanceStore {
       });
     }
 
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
+    const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
 
     const totalClasses = present + absent + leave;
     const rate = totalClasses > 0 ? Math.round((present / totalClasses) * 100) : 100;
 
+    const mondayFormatted = monday.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+    const sundayFormatted = sunday.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
+
     return {
-      weekRange: `${monday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${sunday.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+      weekRange: `${mondayFormatted} – ${sundayFormatted}`,
       logs: weekDays,
       present,
       absent,
@@ -907,17 +932,26 @@ class AttendanceStore {
   }
 
   getStudentHistoryMonthly(rollNo, yearMonthStr) {
-    const [yearStr, monthStr] = yearMonthStr.split('-');
+    const [yearStr, monthStr] = (yearMonthStr || this.getTodayDateStr().substring(0, 7)).split('-');
     const year = parseInt(yearStr, 10);
     const month = parseInt(monthStr, 10);
 
     const daysInMonth = new Date(year, month, 0).getDate();
     const logs = [];
+    const dayNamesShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    // Day of week for the 1st day of month (0: Sun, 1: Mon, ... 6: Sat)
+    // Convert to Monday-start offset (0: Mon ... 6: Sun)
+    const firstDaySundayBased = new Date(year, month - 1, 1).getDay();
+    const startOffsetMondayBased = firstDaySundayBased === 0 ? 6 : firstDaySundayBased - 1;
 
     let present = 0, absent = 0, leave = 0, holidaysCount = 0;
 
     for (let day = 1; day <= daysInMonth; day++) {
       const dStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayDate = new Date(year, month - 1, day);
+      const dayName = dayNamesShort[dayDate.getDay()];
+
       const holInfo = this.getHolidayInfo(dStr);
       const att = this.getAttendanceForDate(dStr);
       let status = att[rollNo] || 'unmarked';
@@ -931,6 +965,7 @@ class AttendanceStore {
 
       logs.push({
         day,
+        dayName,
         date: dStr,
         status,
         holidayName: holInfo.isHoliday ? holInfo.name : null
@@ -939,10 +974,12 @@ class AttendanceStore {
 
     const totalClasses = present + absent + leave;
     const rate = totalClasses > 0 ? Math.round((present / totalClasses) * 100) : 100;
-    const monthName = new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const monthName = new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
     return {
       monthName,
+      startOffset: startOffsetMondayBased,
+      daysInMonth,
       logs,
       present,
       absent,

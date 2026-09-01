@@ -213,30 +213,56 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----------------------------------------------------
-  // Date Helpers
+  // Date Helpers (Real-Time Indian Standard Time IST)
   // ----------------------------------------------------
   function getTodayDateStr() {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
+    try {
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      return formatter.format(new Date());
+    } catch {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+  }
+
+  function parseDateParts(dateStr) {
+    if (!dateStr) return new Date();
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function formatDateParts(dateObj) {
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   function formatDateHuman(dateStr) {
     if (!dateStr) return '';
     try {
-      const options = { month: 'short', day: 'numeric', year: 'numeric' };
-      const dateObj = new Date(dateStr + 'T00:00:00');
-      return isNaN(dateObj) ? dateStr : dateObj.toLocaleDateString('en-US', options);
+      const dateObj = parseDateParts(dateStr);
+      return dateObj.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
     } catch {
       return dateStr;
     }
   }
 
   function updateMonthDisplay() {
-    const dateObj = new Date(currentDate + 'T00:00:00');
-    const monthName = dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const dateObj = parseDateParts(currentDate);
+    const monthName = dateObj.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
     if (currentMonthDisplay) {
       currentMonthDisplay.textContent = monthName;
     }
@@ -265,8 +291,8 @@ document.addEventListener('DOMContentLoaded', () => {
       dateBadgeToday.textContent = 'TODAY';
       dateBadgeToday.className = 'text-[9px] bg-emerald-400 text-emerald-950 px-2 py-0.5 rounded-full font-black';
     } else {
-      const d = new Date(currentDate + 'T00:00:00');
-      const formatted = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const d = parseDateParts(currentDate);
+      const formatted = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
       dateBadgeToday.textContent = formatted.toUpperCase();
       dateBadgeToday.className = 'text-[9px] bg-white text-indigo-950 px-2 py-0.5 rounded-full font-black';
     }
@@ -274,9 +300,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function changeDate(delta) {
-    const d = new Date(currentDate + 'T00:00:00');
+    const d = parseDateParts(currentDate);
     d.setDate(d.getDate() + delta);
-    currentDate = d.toISOString().split('T')[0];
+    currentDate = formatDateParts(d);
     dateInput.value = currentDate;
     updateDateBadge();
     renderAttendanceList();
@@ -1081,8 +1107,15 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           </div>
 
-          <h4 class="text-[10px] font-black uppercase tracking-wider text-slate-400 pt-1">Monthly 31-Day Matrix</h4>
+          <h4 class="text-[10px] font-black uppercase tracking-wider text-slate-400 pt-1">Monthly Calendar Matrix</h4>
+          <!-- Weekday Headers (Mon to Sun) -->
+          <div class="grid grid-cols-7 gap-1.5 text-center text-[9px] font-black text-slate-400 uppercase mb-1">
+            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span class="text-rose-500 font-extrabold">Sun</span>
+          </div>
           <div class="grid grid-cols-7 gap-1.5 mb-2">
+            ${Array.from({ length: monthly.startOffset || 0 }).map(() => `
+              <div class="aspect-square rounded-lg border border-dashed border-slate-100 bg-slate-50/30"></div>
+            `).join('')}
             ${monthly.logs.map(log => {
               let bg = 'bg-slate-50 text-slate-400 border-slate-200';
               let char = '·';
@@ -1092,8 +1125,8 @@ document.addEventListener('DOMContentLoaded', () => {
               else if (log.status === 'holiday') { bg = 'bg-purple-100 text-purple-800 border-purple-300 font-black'; char = 'H'; }
 
               return `
-                <div class="aspect-square rounded-lg border flex flex-col items-center justify-center p-1 ${bg}" title="${log.date}: ${log.status.toUpperCase()} ${log.holidayName ? '(' + log.holidayName + ')' : ''}">
-                  <span class="text-[10px] leading-none">${log.day}</span>
+                <div class="aspect-square rounded-lg border flex flex-col items-center justify-center p-1 ${bg}" title="${log.date} (${log.dayName}): ${log.status.toUpperCase()} ${log.holidayName ? '(' + log.holidayName + ')' : ''}">
+                  <span class="text-[10px] leading-none font-bold">${log.day}</span>
                   <span class="text-[9px] font-black">${char}</span>
                 </div>
               `;
